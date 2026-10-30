@@ -13,7 +13,11 @@ import { AllExceptionsFilter } from '../common/errors/all-exceptions.filter';
 export function configureApp(app: INestApplication): void {
   app.useLogger(app.get(Logger));
   app.enableCors({
-    origin: true, // Accept requests from everywhere
+    origin: [
+      process.env.FRONTEND_URL,
+      'https://atlas-node-joses-syanwas-projects.vercel.app',
+      'http://localhost:5173',
+    ].filter((origin): origin is string => Boolean(origin)),
     credentials: true,
   });
   const { httpAdapter } = app.get(HttpAdapterHost);

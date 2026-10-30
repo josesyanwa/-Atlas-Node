@@ -47,6 +47,7 @@ export function SignInPage() {
 
   const signInEmail = useSignInEmail();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [isGoogleRedirecting, setIsGoogleRedirecting] = useState(false);
 
   const handleEmailSignIn = async (values: {
@@ -55,6 +56,7 @@ export function SignInPage() {
     password: string;
   }) => {
     setErrorMessage(null);
+    setUnverifiedEmail(null);
 
     const result = await signInEmail.mutateAsync({
       email: values.email,
@@ -63,7 +65,11 @@ export function SignInPage() {
     });
 
     if (result.error) {
-      setErrorMessage(getErrorMessage(result.error, "Unable to sign in."));
+      const message = getErrorMessage(result.error, "Unable to sign in.");
+      setErrorMessage(message);
+      if (message.toLowerCase().includes("verify your email")) {
+        setUnverifiedEmail(values.email);
+      }
       return;
     }
 
@@ -108,6 +114,21 @@ export function SignInPage() {
             errorMessage={errorMessage}
             onSubmit={handleEmailSignIn}
           />
+          {unverifiedEmail ? (
+            <p className="text-center text-sm text-muted-foreground">
+              <Link
+                to="/verify-email"
+                search={{
+                  email: unverifiedEmail,
+                  redirect: redirectTo,
+                }}
+                className="font-medium text-primary underline"
+              >
+                Enter your email verification code
+              </Link>
+              {" or resend it"}
+            </p>
+          ) : null}
 
           <div className="flex items-center gap-3">
             <Separator className="flex-1" />

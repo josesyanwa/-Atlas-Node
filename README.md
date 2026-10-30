@@ -186,6 +186,8 @@ Create `apps/backend/.env`:
 
 ```env
 DATABASE_URL=postgresql://launchstack:launchstack@localhost:11753/launchstack
+# Optional direct connection URL for migrations (Neon provides this separately).
+# DATABASE_URL_UNPOOLED=
 BETTER_AUTH_SECRET=<run: openssl rand -base64 32>
 BETTER_AUTH_URL=http://localhost:3000
 FRONTEND_URL=http://localhost:5173

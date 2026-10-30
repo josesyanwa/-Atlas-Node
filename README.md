@@ -189,7 +189,7 @@ GOOGLE_CLIENT_ID=<google oauth client id>
 GOOGLE_CLIENT_SECRET=<google oauth client secret>
 ```
 
-> **Tip:** [Resend](https://resend.com) gives you a free API key and `onboarding@resend.dev` works for local dev without domain verification.
+> **Email delivery:** [Resend](https://resend.com)'s `onboarding@resend.dev` sender is for testing and can only deliver to the email address associated with your Resend account. To send codes to other recipients, verify a domain in Resend and set `EMAIL_FROM` to an address on that domain (for example, `Atlas Node <noreply@your-verified-domain.com>`).
 
 ### 4. Run migrations
 

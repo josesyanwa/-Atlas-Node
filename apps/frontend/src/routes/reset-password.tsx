@@ -20,10 +20,18 @@ import {
 } from "@/hooks/api/use-auth";
 
 function getErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
   if (typeof error === "object" && error !== null) {
+    const response = (error as { response?: { data?: { message?: unknown } } })
+      .response;
+    const responseMessage = response?.data?.message;
+    if (typeof responseMessage === "string" && responseMessage.length > 0) {
+      return responseMessage;
+    }
+
+    if (error instanceof Error && error.message) {
+      return error.message;
+    }
+
     const candidate = (error as { message?: unknown }).message;
     if (typeof candidate === "string" && candidate.length > 0) {
       return candidate;
@@ -32,6 +40,9 @@ function getErrorMessage(error: unknown, fallback: string) {
     if (typeof code === "string" && code.length > 0) {
       return code;
     }
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
   }
   return fallback;
 }

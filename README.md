@@ -64,7 +64,8 @@ This is what a real production foundation looks like. Fork it, rename it, and st
 ### B2B Dashboard Prototype
 
 - **Organization overview** at `/dashboard` with live member counts and the current subscription plan
-- **Demo storage and API request metrics** plus a sample recent-activity feed, clearly labelled as prototype data
+- **Live organization member counts, roles, and join dates**, plus the persisted plan and quota
+- Storage consumption, API request totals, and audit history are not shown because the template does not yet collect those records
 - **Free, Pro, and Enterprise plan controls** for organization owners; demo quotas are 5 GiB, 100 GiB, and 1 TiB
 - **Plan-gated enterprise export action**: the API denies Free-tier requests and returns a mock success for paid plans; no export file or billing is implemented
 

@@ -91,6 +91,12 @@ export function createAuth(config: AuthConfig) {
     emailAndPassword: { enabled: true },
     advanced: {
       disableCSRFCheck: config.nodeEnv !== 'production',
+      ...(config.nodeEnv === 'production' && {
+        defaultCookieAttributes: {
+          sameSite: 'none',
+          secure: true,
+        },
+      }),
     },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {

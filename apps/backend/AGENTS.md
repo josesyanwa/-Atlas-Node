@@ -118,6 +118,7 @@ Auth uses [Better Auth](https://www.better-auth.com/) v1.6.2 via the `@thallesp/
 - Google OAuth social provider (optional, enabled when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set). Account linking is enabled with Google as a trusted provider, meaning Google sign-in auto-links to existing email+password accounts with the same email.
 - Token encryption via `databaseHooks` — OAuth access tokens and refresh tokens are encrypted at rest using AES-256-GCM. Encryption key is derived from `BETTER_AUTH_SECRET` via scrypt. **Note:** Changing `BETTER_AUTH_SECRET` after OAuth tokens are stored will make existing encrypted tokens unreadable.
 - Email OTP plugin (6-digit codes, 5-minute expiry, auto-sends on signup via Resend)
+- Production session cookies use `SameSite=None; Secure` so credentialed requests work when the frontend and API are on separate Vercel/Render sites. Keep frontend auth requests credentialed and CORS origins explicit.
 - OpenAPI plugin (non-production only)
 
 **Crypto:** `src/auth/crypto.ts` — AES-256-GCM encrypt/decrypt utility. Key derived from `BETTER_AUTH_SECRET` via `scryptSync`. Use `decrypt()` when reading OAuth tokens from the `account` table for external API calls.

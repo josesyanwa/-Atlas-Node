@@ -131,6 +131,27 @@ describe('createAuth', () => {
       expect(options.emailAndPassword).toEqual({ enabled: true });
     });
 
+    it('uses cross-site secure cookies in production', () => {
+      const options = getAuthOptions({
+        ...baseConfig,
+        nodeEnv: 'production',
+      });
+
+      expect(options.advanced.defaultCookieAttributes).toEqual({
+        sameSite: 'none',
+        secure: true,
+      });
+    });
+
+    it('keeps the default cookie policy outside production', () => {
+      const options = getAuthOptions({
+        ...baseConfig,
+        nodeEnv: 'development',
+      });
+
+      expect(options.advanced.defaultCookieAttributes).toBeUndefined();
+    });
+
     it('should include openAPI plugin in non-production', () => {
       const options = getAuthOptions({ ...baseConfig, nodeEnv: 'development' });
       expect(

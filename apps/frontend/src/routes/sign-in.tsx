@@ -87,78 +87,91 @@ export function SignInPage() {
   return (
     <>
       <AuthThemeToggle />
-      <div className="mx-auto flex min-h-screen w-full max-w-md items-center px-4 py-10">
-      <Card className="w-full">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-primary/10">
-            <Rocket className="size-6 text-primary" />
-          </div>
-          <CardTitle className="text-2xl">Sign in</CardTitle>
-          <CardDescription>
-            Use your email/password or continue with Google.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {search.reset === "success" ? (
-            <div
-              className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700"
-              role="status"
-            >
-              Password updated. Sign in with your new password.
-            </div>
-          ) : null}
+      <main className="mx-auto grid min-h-screen w-full max-w-5xl items-center gap-10 px-4 py-10 md:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] md:gap-16 md:px-8">
+        <section className="mx-auto w-full max-w-xl space-y-4">
+          <p className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            Atlas Node
+          </p>
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+            A shared workspace for your team.
+          </h1>
+          <p className="max-w-lg text-base leading-7 text-muted-foreground">
+            Atlas Node helps you manage your organization in one place: invite
+            teammates, manage member access, and keep team settings organized.
+          </p>
+        </section>
 
-          <EmailAuthForm
-            mode="sign-in"
-            isPending={signInEmail.isPending}
-            errorMessage={errorMessage}
-            onSubmit={handleEmailSignIn}
-          />
-          {unverifiedEmail ? (
+        <Card className="mx-auto w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-primary/10">
+              <Rocket className="size-6 text-primary" />
+            </div>
+            <CardTitle className="text-2xl">Sign in</CardTitle>
+            <CardDescription>
+              Use your email/password or continue with Google.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {search.reset === "success" ? (
+              <div
+                className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700"
+                role="status"
+              >
+                Password updated. Sign in with your new password.
+              </div>
+            ) : null}
+
+            <EmailAuthForm
+              mode="sign-in"
+              isPending={signInEmail.isPending}
+              errorMessage={errorMessage}
+              onSubmit={handleEmailSignIn}
+            />
+            {unverifiedEmail ? (
+              <p className="text-center text-sm text-muted-foreground">
+                <Link
+                  to="/verify-email"
+                  search={{
+                    email: unverifiedEmail,
+                    redirect: redirectTo,
+                  }}
+                  className="font-medium text-primary underline"
+                >
+                  Enter your email verification code
+                </Link>
+                {" or resend it"}
+              </p>
+            ) : null}
+
+            <div className="flex items-center gap-3">
+              <Separator className="flex-1" />
+              <span className="text-xs text-muted-foreground">OR</span>
+              <Separator className="flex-1" />
+            </div>
+
+            <GoogleAuthButton
+              isPending={isGoogleRedirecting}
+              onClick={handleGoogleSignIn}
+              label="Sign in with Google"
+            />
+
             <p className="text-center text-sm text-muted-foreground">
+              Need an account?{" "}
               <Link
-                to="/verify-email"
-                search={{
-                  email: unverifiedEmail,
-                  redirect: redirectTo,
-                }}
+                to="/sign-up"
+                search={
+                  redirectTo === DEFAULT_AUTH_REDIRECT_PATH
+                    ? {}
+                    : { redirect: redirectTo }
+                }
                 className="font-medium text-primary underline"
               >
-                Enter your email verification code
+                Create one
               </Link>
-              {" or resend it"}
             </p>
-          ) : null}
-
-          <div className="flex items-center gap-3">
-            <Separator className="flex-1" />
-            <span className="text-xs text-muted-foreground">OR</span>
-            <Separator className="flex-1" />
-          </div>
-
-          <GoogleAuthButton
-            isPending={isGoogleRedirecting}
-            onClick={handleGoogleSignIn}
-            label="Sign in with Google"
-          />
-
-          <p className="text-center text-sm text-muted-foreground">
-            Need an account?{" "}
-            <Link
-              to="/sign-up"
-              search={
-                redirectTo === DEFAULT_AUTH_REDIRECT_PATH
-                  ? {}
-                  : { redirect: redirectTo }
-              }
-              className="font-medium text-primary underline"
-            >
-              Create one
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </main>
     </>
   );
 }

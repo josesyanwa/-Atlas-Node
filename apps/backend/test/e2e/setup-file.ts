@@ -8,9 +8,9 @@ import { inject, vi } from 'vitest';
 // already-set key, so these values win and the dev .env can only fill gaps.
 loadEnv({ path: fileURLToPath(new URL('../../.env.test', import.meta.url)) });
 
-// Set before any import of src/app.module: TemporalModule.forRoot() calls
-// Connection.connect() eagerly in a useFactory, so the app connects for real
-// to the dev server rather than to a mocked client.
+// Set before any import of src/app.module: the Temporal client and its
+// background bootstrap use this address, so e2e tests connect to the dev
+// server rather than a mocked client.
 process.env.TEMPORAL_ADDRESS = inject('temporalAddress');
 
 // A module mock, not a DI override: `new Resend(...)` is called directly at

@@ -141,16 +141,31 @@ describe('SchedulesBootstrap', () => {
     expect(Logger.prototype.error).not.toHaveBeenCalled();
   });
 
-  it('never throws when registration fails', async () => {
+  it('logs registration failures without throwing', async () => {
     const { client } = makeClient();
     client.connection.operatorService.addSearchAttributes.mockRejectedValue(
       grpcError(14),
     );
 
-    await expect(
+    expect(() =>
       new SchedulesBootstrap(client, cfg, config()).onModuleInit(),
-    ).resolves.toBeUndefined();
+    ).not.toThrow();
+    await new Promise((resolve) => setImmediate(resolve));
     expect(Logger.prototype.error).toHaveBeenCalled();
+  });
+
+  it('does not wait for Temporal during application startup', async () => {
+    const { client } = makeClient();
+    client.connection.operatorService.addSearchAttributes.mockImplementation(
+      () => new Promise(() => {}),
+    );
+
+    expect(() =>
+      new SchedulesBootstrap(client, cfg, config()).onModuleInit(),
+    ).not.toThrow();
+    expect(
+      client.connection.operatorService.addSearchAttributes,
+    ).toHaveBeenCalled();
   });
 
   it('does nothing when TEMPORAL_MANAGE_SCHEDULES is false', async () => {

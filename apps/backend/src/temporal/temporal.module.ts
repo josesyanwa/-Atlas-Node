@@ -25,8 +25,8 @@ export class TemporalModule {
         {
           provide: TEMPORAL_CLIENT,
           inject: [TEMPORAL_CONFIG],
-          useFactory: async (cfg: TemporalConfig): Promise<Client> => {
-            const connection = await Connection.connect({
+          useFactory: (cfg: TemporalConfig): Client => {
+            const connection = Connection.lazy({
               address: cfg.address,
             });
             return new Client({ connection, namespace: cfg.namespace });

@@ -227,7 +227,7 @@ Returns **202** `{ data: { jobId: "NoopWorkflow:..." }, message: "enqueued", suc
 
 **Operational notes:**
 
-- **API boot needs Temporal.** `TemporalModule` connects eagerly, so the API fails to boot when the server at `TEMPORAL_ADDRESS` is unreachable. (The e2e suite starts its own Temporal dev server.)
+- **API boot does not require Temporal to be reachable.** The client connection is lazy and search-attribute/schedule setup runs in the background, so the HTTP server can bind when Temporal is unavailable. Requests that use Temporal still need a reachable `TEMPORAL_ADDRESS`; `/api/health` reports that dependency as degraded. Use `/api/health/live` for platform liveness checks so a Temporal outage does not prevent or restart the API.
 - **Legacy cleanup.** The `pgboss` Postgres schema from the old queue is orphaned. Drop it manually (`DROP SCHEMA pgboss CASCADE;`) once no in-flight jobs matter.
 
 ### Testing

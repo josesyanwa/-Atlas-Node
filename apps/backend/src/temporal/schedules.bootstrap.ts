@@ -103,10 +103,19 @@ export class SchedulesBootstrap implements OnModuleInit {
     private readonly config: ConfigService,
   ) {}
 
-  async onModuleInit(): Promise<void> {
+  onModuleInit(): void {
     if (this.config.get<string>('TEMPORAL_MANAGE_SCHEDULES') === 'false') {
       return;
     }
+    // Temporal is optional to HTTP startup. Run its bootstrap in the
+    // background so an unavailable cluster cannot prevent the API from
+    // binding its port.
+    void this.bootstrapTemporal().catch((err: unknown) => {
+      this.logger.error(`Temporal bootstrap failed: ${describe(err)}`);
+    });
+  }
+
+  private async bootstrapTemporal(): Promise<void> {
     // First: a Schedule's workflow may start org-scoped children.
     await this.registerSearchAttributes();
     await syncSchedules(

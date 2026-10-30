@@ -17,6 +17,8 @@ import { EmailOtpService } from './email-otp.service';
       inject: [KYSELY_DB, ConfigService],
       useFactory: (db: AppDatabase, configService: ConfigService) => {
         const databaseUrl = configService.getOrThrow<string>('DATABASE_URL');
+        const authDatabaseUrl =
+          configService.get<string>('DATABASE_URL_UNPOOLED') ?? databaseUrl;
         const secret = configService.getOrThrow<string>('BETTER_AUTH_SECRET');
         const baseURL = configService.getOrThrow<string>('BETTER_AUTH_URL');
         const frontendURL = configService.getOrThrow<string>('FRONTEND_URL');
@@ -29,7 +31,7 @@ import { EmailOtpService } from './email-otp.service';
         return {
           auth: createAuth({
             db,
-            databaseUrl,
+            databaseUrl: authDatabaseUrl,
             secret,
             baseURL,
             trustedOrigins: [baseURL, frontendURL],

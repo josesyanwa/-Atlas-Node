@@ -1,0 +1,33 @@
+{
+  "name": "atlas-node",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "dev:backend": "pnpm --filter backend start:debug",
+    "dev:worker": "pnpm --filter backend start:worker:dev",
+    "dev:packages": "pnpm --filter @atlas-node/api-interfaces --filter @atlas-node/core --parallel dev",
+    "dev": "pnpm build:packages && pnpm \"/^dev:(frontend|backend|worker|packages)$/\"",
+    "build:packages": "pnpm --filter @atlas-node/api-interfaces --filter @atlas-node/core build",
+    "build:apps": "pnpm --filter frontend --filter backend build",
+    "build": "pnpm run build:packages && pnpm run build:apps",
+    "lint": "pnpm -r lint",
+    "deploy:frontend": "pnpm run build:packages && pnpm --filter frontend build",
+    "deploy:backend": "pnpm run build:packages && pnpm --filter backend build && pnpm --filter backend deploy ./deploy/backend --prod",
+    "deploy": "pnpm run build:packages && pnpm run build:apps && pnpm --filter backend deploy ./deploy/backend --prod",
+    "start:prod:backend": "node ./deploy/backend/dist/main.js",
+    "start:prod:worker": "node ./deploy/backend/dist/worker.js",
+    "preview:frontend": "pnpm --filter frontend preview",
+    "serve:frontend:prod": "pnpm run deploy:frontend && pnpm --filter frontend preview",
+    "db:generate": "pnpm --filter backend db:generate",
+    "db:up": "pnpm --filter backend db:up",
+    "db:down": "pnpm --filter backend db:down",
+    "db:status": "pnpm --filter backend db:status",
+    "db:fresh": "pnpm --filter backend db:fresh",
+    "temporal:reset": "bash ./scripts/temporal-reset.sh"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

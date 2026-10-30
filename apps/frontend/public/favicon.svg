@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="Atlas Node">
+  <defs>
+    <linearGradient id="ls-tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1B2358"/>
+      <stop offset="1" stop-color="#070A1D"/>
+    </linearGradient>
+    <radialGradient id="ls-halo" cx=".26" cy=".78" r=".62">
+      <stop offset="0" stop-color="#6366F1" stop-opacity=".6"/>
+      <stop offset="1" stop-color="#6366F1" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ls-glow" cx=".72" cy=".24" r=".5">
+      <stop offset="0" stop-color="#22D3EE" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#22D3EE" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ls-hull" gradientUnits="userSpaceOnUse" x1="0" y1="-32" x2="0" y2="32">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset=".34" stop-color="#C9D0FF"/>
+      <stop offset=".68" stop-color="#8B8CFF"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+    <linearGradient id="ls-fire" gradientUnits="userSpaceOnUse" x1="0" y1="35" x2="0" y2="47">
+      <stop offset="0" stop-color="#FFD58A"/>
+      <stop offset=".45" stop-color="#FF7A45"/>
+      <stop offset="1" stop-color="#FF3D77"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#ls-tile)"/>
+  <rect width="64" height="64" rx="15" fill="url(#ls-halo)"/>
+  <rect width="64" height="64" rx="15" fill="url(#ls-glow)"/>
+  <rect x=".25" y=".25" width="63.5" height="63.5" rx="14.75" fill="none" stroke="#fff" stroke-opacity=".16" stroke-width=".5"/>
+  <g transform="translate(32 32) rotate(45) scale(.74) translate(0 -7.5)">
+    <path d="M0 47 C-5.2 41.5 -5.6 38 -4 35.2 H4 C5.6 38 5.2 41.5 0 47Z" fill="url(#ls-fire)"/>
+    <path d="M-9 20 H9 C9 25 12 28 16 32 H-16 C-12 28 -9 25 -9 20Z" fill="url(#ls-hull)"/>
+    <path d="M-9 -7 H9 V15 Q9 17 7 17 H-7 Q-9 17 -9 15Z" fill="url(#ls-hull)"/>
+    <circle cx="0" cy="5" r="4.6" fill="#0C1130"/>
+    <circle cx="0" cy="5" r="2.3" fill="#22D3EE"/>
+    <path d="M0 -32 C7 -24 9 -17 9 -10 H-9 C-9 -17 -7 -24 0 -32Z" fill="url(#ls-hull)"/>
+  </g>
+</svg>

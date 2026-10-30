@@ -6,6 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { AuthModule as BetterAuthModule } from '@thallesp/nestjs-better-auth';
 import * as express from 'express';
+import { normalizeOrigin } from '../common/origin';
 import { KYSELY_DB, type AppDatabase } from '../databases/kysely';
 import { createAuth } from './auth.config';
 import { EmailOtpController } from './email-otp.controller';
@@ -34,7 +35,10 @@ import { EmailOtpService } from './email-otp.service';
             databaseUrl: authDatabaseUrl,
             secret,
             baseURL,
-            trustedOrigins: [baseURL, frontendURL],
+            trustedOrigins: [
+              normalizeOrigin(baseURL),
+              normalizeOrigin(frontendURL),
+            ],
             resendApiKey,
             emailFrom,
             nodeEnv: configService.get<string>('NODE_ENV'),

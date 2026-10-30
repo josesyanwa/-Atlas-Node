@@ -2,6 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { Logger } from 'nestjs-pino';
 import { AllExceptionsFilter } from '../common/errors/all-exceptions.filter';
+import { normalizeOrigin } from '../common/origin';
 
 /**
  * Everything the running application needs beyond AppModule itself.
@@ -14,7 +15,9 @@ export function configureApp(app: INestApplication): void {
   app.useLogger(app.get(Logger));
   app.enableCors({
     origin: [
-      process.env.FRONTEND_URL,
+      process.env.FRONTEND_URL
+        ? normalizeOrigin(process.env.FRONTEND_URL)
+        : undefined,
       'https://atlas-node-joses-syanwas-projects.vercel.app',
       'http://localhost:5173',
     ].filter((origin): origin is string => Boolean(origin)),

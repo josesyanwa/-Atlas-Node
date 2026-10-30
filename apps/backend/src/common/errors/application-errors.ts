@@ -59,6 +59,10 @@ export const AppError = sealRegistry({
     message: ({ reason }) => `Failed to send verification email: ${reason}`,
     details: ({ reason }) => ({ reason }),
   }),
+  SUBSCRIPTION_UPGRADE_REQUIRED: defineError({
+    status: HttpStatus.FORBIDDEN,
+    message: 'This action requires a Pro or Enterprise subscription',
+  }),
 
   // --- Org context / guard ---
   ORG_HEADER_REQUIRED: defineError({

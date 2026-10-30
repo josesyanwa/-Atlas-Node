@@ -38,7 +38,7 @@ export class MembersController {
   }
 
   @Patch(':memberId')
-  @RequireOrgRole('owner')
+  @RequireOrgRole('admin')
   async updateRole(
     @OrgMembership() membership: OrgMembershipContext,
     @Param('memberId') memberId: string,
@@ -49,6 +49,7 @@ export class MembersController {
       organizationId: membership.organizationId,
       memberId,
       newRole: body.role,
+      callerRole: membership.role,
     });
     return { data, message: 'Role updated', success: true };
   }

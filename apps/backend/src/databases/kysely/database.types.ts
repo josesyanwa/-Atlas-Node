@@ -29,6 +29,7 @@ export type GeneratedTimestamp = ColumnType<
 export type OrganizationRole = 'owner' | 'admin' | 'viewer';
 export type InviteRole = 'admin' | 'viewer';
 export type InviteStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
+export type SubscriptionPlan = 'free' | 'pro' | 'enterprise';
 
 // ---------------------------------------------------------------------------
 // public schema
@@ -39,6 +40,8 @@ export interface OrganizationsTable {
   name: string;
   slug: string;
   ownerId: string;
+  activeSubscriptionPlan: Generated<SubscriptionPlan>;
+  usageQuotaBytes: Generated<number>;
   /** Set = frozen read-only; see OrgDeactivationGuard. */
   deactivatedAt: Date | null;
   createdAt: GeneratedTimestamp;

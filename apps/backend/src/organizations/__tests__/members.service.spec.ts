@@ -46,6 +46,7 @@ describe('MembersService', () => {
           organizationId: 'o1',
           memberId: 'm-owner',
           newRole: 'admin',
+          callerRole: 'owner',
         }),
       ).rejects.toMatchObject({ status: 409 });
     });
@@ -76,8 +77,69 @@ describe('MembersService', () => {
         organizationId: 'o1',
         memberId: 'm-admin',
         newRole: 'viewer',
+        callerRole: 'owner',
       });
       expect(out.role).toBe('viewer');
+    });
+
+    it('allows an admin to promote a viewer', async () => {
+      const { members } = mocks();
+      members.listByOrg.mockResolvedValue([
+        {
+          member: {
+            id: 'm-viewer',
+            role: 'viewer',
+            userId: 'u2',
+            organizationId: 'o1',
+            createdAt: new Date(),
+          },
+          user: { id: 'u2', name: '', email: '', image: null },
+        },
+      ]);
+      members.updateRole.mockResolvedValue({
+        id: 'm-viewer',
+        role: 'admin',
+        userId: 'u2',
+        organizationId: 'o1',
+        createdAt: new Date(),
+      });
+      const svc = new MembersService(members);
+
+      const out = await svc.updateMemberRole({
+        organizationId: 'o1',
+        memberId: 'm-viewer',
+        newRole: 'admin',
+        callerRole: 'admin',
+      });
+
+      expect(out.role).toBe('admin');
+    });
+
+    it('does not let an admin change another admin role', async () => {
+      const { members } = mocks();
+      members.listByOrg.mockResolvedValue([
+        {
+          member: {
+            id: 'm-admin',
+            role: 'admin',
+            userId: 'u2',
+            organizationId: 'o1',
+            createdAt: new Date(),
+          },
+          user: { id: 'u2', name: '', email: '', image: null },
+        },
+      ]);
+      const svc = new MembersService(members);
+
+      await expect(
+        svc.updateMemberRole({
+          organizationId: 'o1',
+          memberId: 'm-admin',
+          newRole: 'viewer',
+          callerRole: 'admin',
+        }),
+      ).rejects.toMatchObject({ status: 403 });
+      expect(members.updateRole).not.toHaveBeenCalled();
     });
   });
 
@@ -159,6 +221,36 @@ describe('MembersService', () => {
         targetMemberId: 'm-admin',
       });
       expect(members.delete).toHaveBeenCalledWith('m-admin');
+    });
+
+    it('admin cannot remove another admin', async () => {
+      const { members } = mocks();
+      members.listByOrg.mockResolvedValue([
+        {
+          member: {
+            id: 'm-target',
+            role: 'admin',
+            userId: 'u3',
+            organizationId: 'o1',
+            createdAt: new Date(),
+          },
+          user: { id: 'u3', name: '', email: '', image: null },
+        },
+      ]);
+      const svc = new MembersService(members);
+
+      await expect(
+        svc.removeMember({
+          organizationId: 'o1',
+          callerMembership: {
+            id: 'm-admin',
+            role: 'admin',
+            userId: 'u2',
+          } as any,
+          targetMemberId: 'm-target',
+        }),
+      ).rejects.toMatchObject({ status: 403 });
+      expect(members.delete).not.toHaveBeenCalled();
     });
   });
 

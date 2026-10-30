@@ -4,6 +4,7 @@ import type {
   MyOrganization,
   Organization,
   OrganizationRole,
+  SubscriptionPlan,
 } from '@atlas-node/api-interfaces';
 import { KYSELY_DB } from '../../databases/kysely';
 import type {
@@ -44,6 +45,8 @@ export function serializeOrganization(row: OrganizationSelect): Organization {
     name: row.name,
     slug: row.slug,
     ownerId: row.ownerId,
+    activeSubscriptionPlan: row.activeSubscriptionPlan,
+    usageQuotaBytes: Number(row.usageQuotaBytes),
     deactivatedAt: row.deactivatedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -138,6 +141,37 @@ export class OrganizationsService {
       throw AppError.ORG_NOT_FOUND();
     }
     return serializeOrganization(updated);
+  }
+
+  async updateSubscriptionPlan(
+    organizationId: string,
+    plan: SubscriptionPlan,
+  ): Promise<Organization> {
+    const quotaByPlan: Record<SubscriptionPlan, number> = {
+      free: 5 * 1024 ** 3,
+      pro: 100 * 1024 ** 3,
+      enterprise: 1024 ** 4,
+    };
+    const updated = await this.orgs.updateSubscription(
+      organizationId,
+      plan,
+      quotaByPlan[plan],
+    );
+    if (!updated) {
+      throw AppError.ORG_NOT_FOUND();
+    }
+    return serializeOrganization(updated);
+  }
+
+  async startEnterpriseExport(organizationId: string): Promise<string> {
+    const organization = await this.orgs.findById(organizationId);
+    if (!organization) {
+      throw AppError.ORG_NOT_FOUND();
+    }
+    if (organization.activeSubscriptionPlan === 'free') {
+      throw AppError.SUBSCRIPTION_UPGRADE_REQUIRED();
+    }
+    return `Demo export queued for ${organization.name}`;
   }
 
   async deleteOrganization(organizationId: string): Promise<void> {

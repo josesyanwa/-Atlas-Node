@@ -37,7 +37,11 @@ export class MembersService {
     organizationId: string;
     memberId: string;
     newRole: Exclude<OrganizationRole, 'owner'>;
+    callerRole: OrganizationRole;
   }): Promise<OrganizationMember> {
+    if (input.callerRole === 'viewer') {
+      throw AppError.MEMBER_INSUFFICIENT_ROLE();
+    }
     const rows = await this.members.listByOrg(input.organizationId);
     const target = rows.find((r) => r.member.id === input.memberId);
     if (!target) {
@@ -45,6 +49,9 @@ export class MembersService {
     }
     if (target.member.role === 'owner') {
       throw AppError.MEMBER_IS_OWNER();
+    }
+    if (input.callerRole === 'admin' && target.member.role === 'admin') {
+      throw AppError.MEMBER_INSUFFICIENT_ROLE();
     }
     const updated = await this.members.updateRole(
       input.memberId,
@@ -78,6 +85,9 @@ export class MembersService {
     }
 
     if (callerRole !== 'owner' && callerRole !== 'admin') {
+      throw AppError.MEMBER_INSUFFICIENT_ROLE();
+    }
+    if (callerRole === 'admin' && target.member.role === 'admin') {
       throw AppError.MEMBER_INSUFFICIENT_ROLE();
     }
 

@@ -14,6 +14,7 @@ function makeMocks() {
     lockById: jest.fn().mockResolvedValue({ id: 'org-1' }),
     create: jest.fn(),
     update: jest.fn(),
+    updateSubscription: jest.fn(),
     delete: jest.fn(),
     setOwner: jest.fn(),
   } as any;
@@ -140,6 +141,63 @@ describe('OrganizationsService', () => {
         slug: 'acme-new',
       });
       expect(result.slug).toBe('acme-new');
+    });
+  });
+
+  describe('subscriptions', () => {
+    it('sets the plan and quota together', async () => {
+      const { orgsRepo, membersRepo, db, teardown } = makeMocks();
+      orgsRepo.updateSubscription.mockResolvedValue({
+        id: 'org-1',
+        name: 'Acme',
+        slug: 'acme',
+        ownerId: 'user-1',
+        activeSubscriptionPlan: 'pro',
+        usageQuotaBytes: 100 * 1024 ** 3,
+        deactivatedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const svc = new OrganizationsService(orgsRepo, membersRepo, db, teardown);
+      const result = await svc.updateSubscriptionPlan('org-1', 'pro');
+
+      expect(orgsRepo.updateSubscription).toHaveBeenCalledWith(
+        'org-1',
+        'pro',
+        100 * 1024 ** 3,
+      );
+      expect(result.activeSubscriptionPlan).toBe('pro');
+      expect(result.usageQuotaBytes).toBe(100 * 1024 ** 3);
+    });
+
+    it('blocks enterprise exports on the free plan', async () => {
+      const { orgsRepo, membersRepo, db, teardown } = makeMocks();
+      orgsRepo.findById.mockResolvedValue({
+        id: 'org-1',
+        name: 'Acme',
+        activeSubscriptionPlan: 'free',
+      });
+      const svc = new OrganizationsService(orgsRepo, membersRepo, db, teardown);
+
+      await expect(svc.startEnterpriseExport('org-1')).rejects.toMatchObject({
+        status: 403,
+        code: 'SUBSCRIPTION_UPGRADE_REQUIRED',
+      });
+    });
+
+    it('allows enterprise exports on paid plans', async () => {
+      const { orgsRepo, membersRepo, db, teardown } = makeMocks();
+      orgsRepo.findById.mockResolvedValue({
+        id: 'org-1',
+        name: 'Acme',
+        activeSubscriptionPlan: 'enterprise',
+      });
+      const svc = new OrganizationsService(orgsRepo, membersRepo, db, teardown);
+
+      await expect(svc.startEnterpriseExport('org-1')).resolves.toContain(
+        'Acme',
+      );
     });
   });
 

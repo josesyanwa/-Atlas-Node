@@ -16,6 +16,22 @@ describe('organizations', () => {
   let ownerCookie: string;
   let ownerId: string;
 
+  async function getOwnerOrganizationId(): Promise<string> {
+    const mine = await request(testApp.server)
+      .get('/api/organizations/me')
+      .set('Cookie', ownerCookie);
+    if (mine.body.data?.[0]?.organization?.id) {
+      return mine.body.data[0].organization.id as string;
+    }
+
+    const created = await request(testApp.server)
+      .post('/api/organizations')
+      .set('Cookie', ownerCookie)
+      .send({ name: 'Owner Dashboard Organization' });
+    expect(created.status).toBe(201);
+    return created.body.data.id as string;
+  }
+
   beforeAll(async () => {
     ({ db, close: closeDb } = await createFileDatabase());
     testApp = await createTestApp();
@@ -109,6 +125,97 @@ describe('organizations', () => {
     expect(res.status).toBe(200);
     expect(res.body.data.organization.id).toBe(orgId);
     expect(res.body.data.role).toBe('owner');
+  });
+
+  it('stores the subscription plan, updates its quota, and gates enterprise exports', async () => {
+    const orgId = await getOwnerOrganizationId();
+    const headers = { Cookie: ownerCookie, 'x-organization-id': orgId };
+
+    const initial = await request(testApp.server)
+      .get('/api/organizations/current')
+      .set(headers);
+    expect(initial.body.data.organization).toMatchObject({
+      activeSubscriptionPlan: 'free',
+      usageQuotaBytes: 5 * 1024 ** 3,
+    });
+
+    const freeExport = await request(testApp.server)
+      .post('/api/organizations/current/enterprise/export')
+      .set(headers);
+    expect(freeExport.status).toBe(403);
+    expect(freeExport.body.code).toBe('SUBSCRIPTION_UPGRADE_REQUIRED');
+
+    const update = await request(testApp.server)
+      .patch('/api/organizations/current/subscription')
+      .set(headers)
+      .send({ activeSubscriptionPlan: 'pro' });
+    expect(update.status).toBe(200);
+    expect(update.body.data).toMatchObject({
+      activeSubscriptionPlan: 'pro',
+      usageQuotaBytes: 100 * 1024 ** 3,
+    });
+
+    const paidExport = await request(testApp.server)
+      .post('/api/organizations/current/enterprise/export')
+      .set(headers);
+    expect(paidExport.status).toBe(201);
+  });
+
+  it('lets admins manage viewer roles but reserves admin roles for owners', async () => {
+    const orgId = await getOwnerOrganizationId();
+    const admin = await createVerifiedUser(testApp.server, db, {
+      email: 'member-role-admin@example.com',
+      password: PASSWORD,
+      name: 'Member Role Admin',
+    });
+    const viewer = await createVerifiedUser(testApp.server, db, {
+      email: 'member-role-viewer@example.com',
+      password: PASSWORD,
+      name: 'Member Role Viewer',
+    });
+    await seedMember(db, {
+      organizationId: orgId,
+      userId: admin.userId,
+      role: 'admin',
+    });
+    await seedMember(db, {
+      organizationId: orgId,
+      userId: viewer.userId,
+      role: 'viewer',
+    });
+
+    const memberList = await request(testApp.server)
+      .get('/api/organizations/current/members')
+      .set('Cookie', ownerCookie)
+      .set('x-organization-id', orgId);
+    const adminMemberId = memberList.body.data.find(
+      (member: { userId: string }) => member.userId === admin.userId,
+    ).id as string;
+    const viewerMemberId = memberList.body.data.find(
+      (member: { userId: string }) => member.userId === viewer.userId,
+    ).id as string;
+
+    const promoteViewer = await request(testApp.server)
+      .patch(`/api/organizations/current/members/${viewerMemberId}`)
+      .set('Cookie', admin.cookie)
+      .set('x-organization-id', orgId)
+      .send({ role: 'admin' });
+    expect(promoteViewer.status).toBe(200);
+    expect(promoteViewer.body.data.role).toBe('admin');
+
+    const changeAdminRole = await request(testApp.server)
+      .patch(`/api/organizations/current/members/${adminMemberId}`)
+      .set('Cookie', admin.cookie)
+      .set('x-organization-id', orgId)
+      .send({ role: 'viewer' });
+    expect(changeAdminRole.status).toBe(403);
+
+    const ownerDemotesAdmin = await request(testApp.server)
+      .patch(`/api/organizations/current/members/${viewerMemberId}`)
+      .set('Cookie', ownerCookie)
+      .set('x-organization-id', orgId)
+      .send({ role: 'viewer' });
+    expect(ownerDemotesAdmin.status).toBe(200);
   });
 
   it('refuses a slug that another organization already uses', async () => {

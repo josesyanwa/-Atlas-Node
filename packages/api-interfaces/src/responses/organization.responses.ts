@@ -1,12 +1,15 @@
 export type OrganizationRole = "owner" | "admin" | "viewer";
 export type InviteRole = "admin" | "viewer";
 export type InviteStatus = "pending" | "accepted" | "revoked" | "expired";
+export type SubscriptionPlan = "free" | "pro" | "enterprise";
 
 export interface Organization {
   id: string;
   name: string;
   slug: string;
   ownerId: string;
+  activeSubscriptionPlan: SubscriptionPlan;
+  usageQuotaBytes: number;
   /**
    * Set = the organization is read-only: reads still work, and org-scoped
    * writes that have not opted out answer 403 `ORG_DEACTIVATED`.
@@ -14,6 +17,10 @@ export interface Organization {
   deactivatedAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface EnterpriseExportResult {
+  message: string;
 }
 
 export interface OrganizationMember {

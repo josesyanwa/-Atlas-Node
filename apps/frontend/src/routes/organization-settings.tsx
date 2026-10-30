@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { UpdateOrganizationSchema } from "@atlas-node/api-interfaces";
+import {
+  UpdateOrganizationSchema,
+  UpdateSubscriptionPlanSchema,
+} from "@atlas-node/api-interfaces";
 import { PageHeader } from "@/components/shared/page-header";
 import { SkeletonList } from "@/components/shared/skeleton-list";
 import { Button } from "@/components/ui/button";
@@ -24,6 +27,7 @@ import {
   useCurrentOrganization,
   useDeleteCurrentOrganization,
   useExitActiveOrganization,
+  useUpdateSubscriptionPlan,
   useTransferOwnership,
   useUpdateCurrentOrganization,
 } from "@/hooks/api/use-organizations";
@@ -34,6 +38,7 @@ export function OrganizationSettingsPage() {
   const current = useCurrentOrganization();
   const members = useCurrentOrganizationMembers();
   const updateOrg = useUpdateCurrentOrganization();
+  const updateSubscription = useUpdateSubscriptionPlan();
   const deleteOrg = useDeleteCurrentOrganization();
   const transfer = useTransferOwnership();
   const exitOrganization = useExitActiveOrganization();
@@ -46,8 +51,7 @@ export function OrganizationSettingsPage() {
 
   const role = current.data?.data.role;
   const org = current.data?.data.organization;
-  const admins =
-    members.data?.data.filter((m) => m.role === "admin") ?? [];
+  const admins = members.data?.data.filter((m) => m.role === "admin") ?? [];
 
   if (!org) {
     return (
@@ -98,6 +102,19 @@ export function OrganizationSettingsPage() {
     await exitOrganization(org.id);
   };
 
+  const handlePlanChange = async (value: string) => {
+    const parsed = UpdateSubscriptionPlanSchema.safeParse({
+      activeSubscriptionPlan: value,
+    });
+    if (!parsed.success) return;
+    try {
+      await updateSubscription.mutateAsync(parsed.data);
+      toast.success("Subscription plan updated");
+    } catch (err) {
+      toast.error(extractErrorMessage(err));
+    }
+  };
+
   const canEdit = role === "owner" || role === "admin";
   const isOwner = role === "owner";
 
@@ -141,6 +158,55 @@ export function OrganizationSettingsPage() {
               {updateOrg.isPending ? "Saving..." : "Save changes"}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Subscription &amp; usage</CardTitle>
+          <CardDescription>
+            Prototype plan limits. No billing provider is connected.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="subscription-plan">Active plan</Label>
+              <Select
+                value={org.activeSubscriptionPlan}
+                onValueChange={(value) => void handlePlanChange(value)}
+                disabled={!isOwner || updateSubscription.isPending}
+              >
+                <SelectTrigger id="subscription-plan">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="free">Free</SelectItem>
+                  <SelectItem value="pro">Pro</SelectItem>
+                  <SelectItem value="enterprise">Enterprise</SelectItem>
+                </SelectContent>
+              </Select>
+              {!isOwner ? (
+                <p className="text-xs text-muted-foreground">
+                  Only the organization owner can change the plan.
+                </p>
+              ) : null}
+            </div>
+            <div className="space-y-1.5">
+              <Label>Storage quota</Label>
+              <p className="rounded-md border px-3 py-2 text-sm">
+                {(org.usageQuotaBytes / 1024 ** 3).toLocaleString(undefined, {
+                  maximumFractionDigits: 0,
+                })}{" "}
+                GiB
+              </p>
+            </div>
+          </div>
+          {updateSubscription.isPending ? (
+            <p className="text-sm text-muted-foreground" role="status">
+              Updating subscription…
+            </p>
+          ) : null}
         </CardContent>
       </Card>
 

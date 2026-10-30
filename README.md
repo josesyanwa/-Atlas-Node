@@ -56,10 +56,17 @@ This is what a real production foundation looks like. Fork it, rename it, and st
 
 - **Create / update / delete organizations** with auto-generated unique slugs
 - **Three-role RBAC**: `owner`, `admin`, `viewer` — enforced server-side via a global guard
-- **Member management**: list members, change roles, remove members, leave organization
+- **Member management**: list members, change roles, remove members, leave organization; owners manage all non-owner roles, while admins can manage viewers
 - **Ownership transfer** with full validation (target must be an existing admin)
 - **Active org context** via `X-Organization-Id` header, set automatically by the frontend Axios interceptor
 - **Per-route role requirements** with the `@RequireOrgRole('admin')` decorator
+
+### B2B Dashboard Prototype
+
+- **Organization overview** at `/dashboard` with live member counts and the current subscription plan
+- **Demo storage and API request metrics** plus a sample recent-activity feed, clearly labelled as prototype data
+- **Free, Pro, and Enterprise plan controls** for organization owners; demo quotas are 5 GiB, 100 GiB, and 1 TiB
+- **Plan-gated enterprise export action**: the API denies Free-tier requests and returns a mock success for paid plans; no export file or billing is implemented
 
 ### Invites
 

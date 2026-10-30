@@ -66,11 +66,8 @@ export function OrganizationMembersPage() {
   const invites = invitesQuery.data?.data ?? [];
 
   const handleRoleChange = (memberId: string, role: OrganizationRole) => {
-    if (role === "owner") return;
-    updateRole.mutate(
-      { memberId, payload: { role: role as "admin" | "viewer" } },
-      { onError },
-    );
+    if (role !== "admin" && role !== "viewer") return;
+    updateRole.mutate({ memberId, payload: { role } }, { onError });
   };
 
   return (
@@ -102,24 +99,33 @@ export function OrganizationMembersPage() {
                     <TableCell>{m.user.name}</TableCell>
                     <TableCell>{m.user.email}</TableCell>
                     <TableCell>
-                      {callerRole === "owner" && m.role !== "owner" ? (
-                        <Select
-                          value={m.role}
-                          onValueChange={(v) =>
-                            handleRoleChange(m.id, v as OrganizationRole)
-                          }
-                        >
-                          <SelectTrigger className="w-28">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="viewer">Viewer</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
+                      <div className="flex items-center gap-2">
                         <RoleBadge role={m.role} />
-                      )}
+                        {canManageMembers &&
+                        m.role !== "owner" &&
+                        (callerRole === "owner" || m.role === "viewer") ? (
+                          <Select
+                            value={m.role}
+                            onValueChange={(value) => {
+                              if (value === "admin" || value === "viewer") {
+                                handleRoleChange(m.id, value);
+                              }
+                            }}
+                            disabled={updateRole.isPending}
+                          >
+                            <SelectTrigger
+                              className="h-8 w-28"
+                              aria-label={`Change role for ${m.user.name}`}
+                            >
+                              <SelectValue placeholder="Change role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="viewer">Viewer</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : null}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       {isSelf && m.role !== "owner" ? (
@@ -139,7 +145,9 @@ export function OrganizationMembersPage() {
                         >
                           Leave
                         </Button>
-                      ) : canManageMembers && m.role !== "owner" ? (
+                      ) : canManageMembers &&
+                        m.role !== "owner" &&
+                        (callerRole === "owner" || m.role === "viewer") ? (
                         <Button
                           size="sm"
                           variant="outline"

@@ -1,12 +1,9 @@
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import type {
   CreateOrganizationRequest,
   TransferOwnershipRequest,
+  UpdateSubscriptionPlanRequest,
   UpdateOrganizationRequest,
 } from "@atlas-node/api-interfaces";
 import { OrganizationsAPI } from "@/api/organizations.api";
@@ -42,7 +39,9 @@ export function useCurrentOrganization() {
 export function useExitActiveOrganization() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const setActive = useActiveOrganizationStore((s) => s.setActiveOrganizationId);
+  const setActive = useActiveOrganizationStore(
+    (s) => s.setActiveOrganizationId,
+  );
 
   return async (goneOrgId: string) => {
     // fetchQuery, not the cache: the cached list may predate the delete/leave.
@@ -106,5 +105,26 @@ export function useTransferOwnership() {
         queryKey: organizationsKeys.current(activeOrgId),
       });
     },
+  });
+}
+
+export function useUpdateSubscriptionPlan() {
+  const queryClient = useQueryClient();
+  const activeOrgId = useActiveOrganizationStore((s) => s.activeOrganizationId);
+  return useMutation({
+    mutationFn: (payload: UpdateSubscriptionPlanRequest) =>
+      OrganizationsAPI.updateSubscription(payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: organizationsKeys.me });
+      await queryClient.invalidateQueries({
+        queryKey: organizationsKeys.current(activeOrgId),
+      });
+    },
+  });
+}
+
+export function useStartEnterpriseExport() {
+  return useMutation({
+    mutationFn: () => OrganizationsAPI.startEnterpriseExport(),
   });
 }

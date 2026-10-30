@@ -7,6 +7,7 @@ import { APP_GUARD } from '@nestjs/core';
 import * as express from 'express';
 import {
   OrganizationsController,
+  OrganizationPlansController,
   MembersController,
   InvitesController,
 } from './controllers';
@@ -26,7 +27,12 @@ import { OrgContextGuard } from './guards/org-context.guard';
 import { OrgDeactivationGuard } from './guards/org-deactivation.guard';
 
 @Module({
-  controllers: [OrganizationsController, MembersController, InvitesController],
+  controllers: [
+    OrganizationsController,
+    OrganizationPlansController,
+    MembersController,
+    InvitesController,
+  ],
   providers: [
     OrganizationsRepository,
     OrganizationMembersRepository,
@@ -52,6 +58,11 @@ export class OrganizationsModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(express.json())
-      .forRoutes(OrganizationsController, MembersController, InvitesController);
+      .forRoutes(
+        OrganizationsController,
+        OrganizationPlansController,
+        MembersController,
+        InvitesController,
+      );
   }
 }

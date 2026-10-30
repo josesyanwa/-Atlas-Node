@@ -5,7 +5,9 @@ const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const CreateOrganizationSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(80),
 });
-export type CreateOrganizationRequest = z.infer<typeof CreateOrganizationSchema>;
+export type CreateOrganizationRequest = z.infer<
+  typeof CreateOrganizationSchema
+>;
 
 export const UpdateOrganizationSchema = z
   .object({
@@ -21,7 +23,16 @@ export const UpdateOrganizationSchema = z
   .refine((v) => v.name !== undefined || v.slug !== undefined, {
     message: "Provide at least one of name or slug",
   });
-export type UpdateOrganizationRequest = z.infer<typeof UpdateOrganizationSchema>;
+export type UpdateOrganizationRequest = z.infer<
+  typeof UpdateOrganizationSchema
+>;
+
+export const UpdateSubscriptionPlanSchema = z.object({
+  activeSubscriptionPlan: z.enum(["free", "pro", "enterprise"]),
+});
+export type UpdateSubscriptionPlanRequest = z.infer<
+  typeof UpdateSubscriptionPlanSchema
+>;
 
 export const TransferOwnershipSchema = z.object({
   newOwnerUserId: z.string().min(1),

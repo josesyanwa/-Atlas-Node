@@ -1,9 +1,11 @@
 import type {
   ApiResponse,
   CreateOrganizationRequest,
+  EnterpriseExportResult,
   MyOrganization,
   Organization,
   OrganizationRole,
+  UpdateSubscriptionPlanRequest,
   TransferOwnershipRequest,
   UpdateOrganizationRequest,
 } from "@atlas-node/api-interfaces";
@@ -69,5 +71,26 @@ export const OrganizationsAPI = {
       data: payload,
     });
     return response.data as ApiResponse<Organization>;
+  },
+
+  updateSubscription: async (
+    payload: UpdateSubscriptionPlanRequest,
+  ): Promise<ApiResponse<Organization>> => {
+    const response = await axiosInstance.request({
+      url: "/api/organizations/current/subscription",
+      method: "PATCH",
+      data: payload,
+    });
+    return response.data as ApiResponse<Organization>;
+  },
+
+  startEnterpriseExport: async (): Promise<
+    ApiResponse<EnterpriseExportResult>
+  > => {
+    const response = await axiosInstance.request({
+      url: "/api/organizations/current/enterprise/export",
+      method: "POST",
+    });
+    return response.data as ApiResponse<EnterpriseExportResult>;
   },
 };

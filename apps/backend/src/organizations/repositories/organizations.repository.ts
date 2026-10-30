@@ -68,6 +68,20 @@ export class OrganizationsRepository {
     return row ?? null;
   }
 
+  async updateSubscription(
+    id: string,
+    activeSubscriptionPlan: OrganizationSelect['activeSubscriptionPlan'],
+    usageQuotaBytes: number,
+  ): Promise<OrganizationSelect | null> {
+    const row = await this.db
+      .updateTable('organizations')
+      .set({ activeSubscriptionPlan, usageQuotaBytes, updatedAt: new Date() })
+      .where('id', '=', id)
+      .returningAll()
+      .executeTakeFirst();
+    return row ?? null;
+  }
+
   async delete(id: string, tx?: DbExecutor): Promise<void> {
     await this.exec(tx)
       .deleteFrom('organizations')

@@ -34,7 +34,7 @@ coverage/
 
 # Local documentation and generated notes
 /docs/
-/.github/workflows/
+# /.github/workflows/
 
 # Turbo
 .turbo/

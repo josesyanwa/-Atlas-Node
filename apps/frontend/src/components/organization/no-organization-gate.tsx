@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CreateOrganizationForm } from "@/components/organization/create-organization-form";
 import { useAuthSession } from "@/hooks/api/use-auth";
 import { useMyPendingInvites } from "@/hooks/api/use-invites";
+import { useMyClientPortalInvites } from "@/hooks/api/use-client-portal";
 
 /**
  * Page-body takeover for a user who belongs to no organization. Every
@@ -15,7 +16,9 @@ export function NoOrganizationGate() {
   const session = useAuthSession();
   const userId = session.data?.data?.user.id;
   const { data } = useMyPendingInvites(userId);
+  const clientInvites = useMyClientPortalInvites(userId);
   const inviteCount = data?.data?.length ?? 0;
+  const clientInviteCount = clientInvites.data?.data?.length ?? 0;
 
   return (
     <div className="flex min-h-[24rem] flex-col items-center justify-center gap-5 text-center">
@@ -28,8 +31,8 @@ export function NoOrganizationGate() {
           Create your organization
         </h1>
         <p className="mx-auto max-w-sm text-sm text-muted-foreground">
-          Everything in Atlas Node lives in an organization. You&apos;ll be
-          the owner and can invite teammates right after.
+          Everything in Atlas Node lives in an organization. You&apos;ll be the
+          owner and can invite teammates right after.
         </p>
       </div>
 
@@ -51,6 +54,24 @@ export function NoOrganizationGate() {
             className="font-medium text-foreground underline underline-offset-4"
           >
             review {inviteCount === 1 ? "it" : "them"}
+          </Link>
+          .
+        </p>
+      ) : null}
+
+      {clientInviteCount > 0 ? (
+        <p className="max-w-sm text-xs text-muted-foreground">
+          You also have{" "}
+          <b>
+            {clientInviteCount} client portal invitation
+            {clientInviteCount === 1 ? "" : "s"}
+          </b>{" "}
+          —{" "}
+          <Link
+            to="/client-portal"
+            className="font-medium text-foreground underline underline-offset-4"
+          >
+            review {clientInviteCount === 1 ? "it" : "them"}
           </Link>
           .
         </p>

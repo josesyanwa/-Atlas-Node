@@ -330,7 +330,7 @@ This means org context is automatic for the frontend and enforced for every prot
 ### How the client portal works
 
 1. A firm admin creates an organization-scoped client and sends a 7-day invitation. The raw invitation token is only emailed; Postgres stores its SHA-256 hash.
-2. The client signs up or signs in with the invited email, verifies it, and accepts the invite. A separate client-user relationship grants access without adding the client to the firm's internal RBAC membership.
+2. The client opens the emailed invite link, signs up or signs in with the invited email, verifies it, and accepts the invite. Signed-in clients can also see pending client invitations in the client portal and notification area. A separate client-user relationship grants access without adding the client to the firm's internal RBAC membership.
 3. Firm members create document requests. An authenticated client can list only requests connected to their client-user relationship and upload allowed files.
 4. The backend receives each upload (up to 10 MiB) into the private Neon bucket, stores object keys and metadata in Postgres, and returns short-lived, attachment-only signed download URLs after checking tenant/client ownership.
 

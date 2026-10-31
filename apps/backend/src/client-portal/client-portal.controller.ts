@@ -17,6 +17,7 @@ import {
   type ApiResponse,
   type ClientDocumentRequest,
   type ClientInvitePreview,
+  type ClientPortalInvite,
   type ClientRecord,
   type CreateClientRequest,
   type CreateDocumentRequest,
@@ -132,6 +133,19 @@ export class ClientPortalController {
     return { data, message: 'OK', success: true };
   }
 
+  @Get('invites/me')
+  async listMyInvites(
+    @Session() session: SessionPayload,
+  ): Promise<ApiResponse<ClientPortalInvite[]>> {
+    if (!session.user.emailVerified) {
+      throw new ForbiddenException(
+        'Verify your email before reviewing client invitations.',
+      );
+    }
+    const data = await this.portal.listPendingInvites(session.user.email);
+    return { data, message: 'OK', success: true };
+  }
+
   @Post('invites/accept')
   async acceptInvite(
     @Session() session: SessionPayload,
@@ -139,6 +153,23 @@ export class ClientPortalController {
     body: { token: string },
   ): Promise<ApiResponse<null>> {
     await this.portal.acceptInvite(body.token, {
+      userId: session.user.id,
+      email: session.user.email,
+      emailVerified: session.user.emailVerified,
+    });
+    return {
+      data: null,
+      message: 'Client portal access activated',
+      success: true,
+    };
+  }
+
+  @Post('invites/:inviteId/accept')
+  async acceptInviteFromInbox(
+    @Session() session: SessionPayload,
+    @Param('inviteId', ParseUUIDPipe) inviteId: string,
+  ): Promise<ApiResponse<null>> {
+    await this.portal.acceptInviteById(inviteId, {
       userId: session.user.id,
       email: session.user.email,
       emailVerified: session.user.emailVerified,

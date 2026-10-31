@@ -125,6 +125,58 @@ export class ClientPortalRepository {
     );
   }
 
+  async listPendingInvitesByEmail(email: string) {
+    return this.db
+      .selectFrom('clientPortalInvites as invite')
+      .innerJoin('clients as client', 'client.id', 'invite.clientId')
+      .innerJoin(
+        'organizations as organization',
+        'organization.id',
+        'client.organizationId',
+      )
+      .select([
+        'invite.id',
+        'invite.expiresAt',
+        'client.name as clientName',
+        'client.email as invitedEmail',
+        'organization.name as organizationName',
+      ])
+      .where('client.email', '=', email.trim().toLowerCase())
+      .where('invite.status', '=', 'pending')
+      .where('invite.expiresAt', '>', new Date())
+      .where('organization.deactivatedAt', 'is', null)
+      .orderBy('invite.createdAt', 'desc')
+      .execute();
+  }
+
+  async findPendingInviteByIdAndEmail(inviteId: string, email: string) {
+    return (
+      (await this.db
+        .selectFrom('clientPortalInvites as invite')
+        .innerJoin('clients as client', 'client.id', 'invite.clientId')
+        .innerJoin(
+          'organizations as organization',
+          'organization.id',
+          'client.organizationId',
+        )
+        .select([
+          'invite.id as inviteId',
+          'invite.clientId',
+          'invite.status',
+          'invite.expiresAt',
+          'invite.tokenHash',
+          'client.name as clientName',
+          'client.email as clientEmail',
+          'client.organizationId',
+          'organization.name as organizationName',
+          'organization.deactivatedAt',
+        ])
+        .where('invite.id', '=', inviteId)
+        .where('client.email', '=', email.trim().toLowerCase())
+        .executeTakeFirst()) ?? null
+    );
+  }
+
   async acceptInvite(
     inviteId: string,
     clientId: string,

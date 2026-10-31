@@ -12,6 +12,8 @@ export const clientPortalKeys = {
   firmRequests: (organizationId: string | null, clientId: string) =>
     ["client-portal", "firm-requests", organizationId, clientId] as const,
   portalRequests: ["client-portal", "portal-requests"] as const,
+  myInvites: (userId?: string) =>
+    ["client-portal", "invites", "me", userId] as const,
   invite: (token: string | undefined) =>
     ["client-portal", "invite", token] as const,
 };
@@ -96,6 +98,33 @@ export function useClientInvitePreview(token?: string) {
 export function useAcceptClientInvite() {
   return useMutation({
     mutationFn: (token: string) => ClientPortalAPI.acceptInvite(token),
+  });
+}
+
+export function useMyClientPortalInvites(userId?: string) {
+  return useQuery({
+    queryKey: clientPortalKeys.myInvites(userId),
+    queryFn: () => ClientPortalAPI.listMyInvites(),
+    enabled: !!userId,
+  });
+}
+
+export function useAcceptClientPortalInvite() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (inviteId: string) =>
+      ClientPortalAPI.acceptInviteFromInbox(inviteId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["client-portal", "invites", "me"],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: clientPortalKeys.portalRequests,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["organizations", "me"],
+      });
+    },
   });
 }
 

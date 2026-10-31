@@ -13,6 +13,8 @@ describe('ClientPortalService', () => {
     addDocumentAndMarkReceived: jest.Mock;
     getDocumentForClient: jest.Mock;
     findInviteByTokenHash: jest.Mock;
+    findPendingInviteByIdAndEmail: jest.Mock;
+    acceptInvite: jest.Mock;
   };
   let storage: {
     upload: jest.Mock;
@@ -31,6 +33,8 @@ describe('ClientPortalService', () => {
       addDocumentAndMarkReceived: jest.fn(),
       getDocumentForClient: jest.fn(),
       findInviteByTokenHash: jest.fn(),
+      findPendingInviteByIdAndEmail: jest.fn(),
+      acceptInvite: jest.fn().mockResolvedValue(true),
     };
     storage = {
       upload: jest.fn().mockResolvedValue(undefined),
@@ -42,7 +46,9 @@ describe('ClientPortalService', () => {
     };
     db = {
       selectFrom: jest.fn(),
-      transaction: jest.fn(),
+      transaction: jest.fn().mockReturnValue({
+        execute: (callback: (tx: object) => unknown) => callback({}),
+      }),
     };
     service = new ClientPortalService(
       repository as never,
@@ -150,5 +156,32 @@ describe('ClientPortalService', () => {
       service.getClientDownload('unlinked-client', documentId),
     ).rejects.toBeInstanceOf(NotFoundException);
     expect(storage.createDownloadUrl).not.toHaveBeenCalled();
+  });
+
+  it('accepts an inbox invitation only through the invited email identity', async () => {
+    repository.findPendingInviteByIdAndEmail.mockResolvedValue({
+      inviteId: documentId,
+      clientId: requestId,
+      status: 'pending',
+      expiresAt: new Date(Date.now() + 60_000),
+      deactivatedAt: null,
+    });
+
+    await service.acceptInviteById(documentId, {
+      userId: 'invited-client',
+      email: 'CLIENT@example.com',
+      emailVerified: true,
+    });
+
+    expect(repository.findPendingInviteByIdAndEmail).toHaveBeenCalledWith(
+      documentId,
+      'CLIENT@example.com',
+    );
+    expect(repository.acceptInvite).toHaveBeenCalledWith(
+      documentId,
+      requestId,
+      'invited-client',
+      expect.any(Object),
+    );
   });
 });

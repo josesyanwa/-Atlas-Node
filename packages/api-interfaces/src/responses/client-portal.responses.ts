@@ -21,6 +21,14 @@ export interface ClientInvitePreview {
   status: ClientInviteStatus;
 }
 
+export interface ClientPortalInvite {
+  id: string;
+  organizationName: string;
+  clientName: string;
+  invitedEmail: string;
+  expiresAt: string;
+}
+
 export interface ClientDocument {
   id: string;
   originalFilename: string;

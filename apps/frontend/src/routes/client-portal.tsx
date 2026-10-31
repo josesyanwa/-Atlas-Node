@@ -19,8 +19,10 @@ import {
   useSignOut,
 } from "@/hooks/api/use-auth";
 import {
+  useAcceptClientPortalInvite,
   useAcceptClientInvite,
   useClientInvitePreview,
+  useMyClientPortalInvites,
   useClientPortalRequests,
   useUploadClientDocument,
 } from "@/hooks/api/use-client-portal";
@@ -30,6 +32,9 @@ const notifyError = (error: unknown) => toast.error(extractErrorMessage(error));
 
 export function ClientPortalPage() {
   const requests = useClientPortalRequests();
+  const session = useAuthSession();
+  const clientInvites = useMyClientPortalInvites(session.data?.data?.user.id);
+  const acceptClientInvite = useAcceptClientPortalInvite();
   const signOut = useSignOut();
   const navigate = useNavigate();
 
@@ -41,6 +46,15 @@ export function ClientPortalPage() {
       }
       clearSignedOutUserState();
       await navigate({ to: "/sign-in" });
+    } catch (error) {
+      notifyError(error);
+    }
+  };
+
+  const handleAcceptClientInvite = async (inviteId: string) => {
+    try {
+      await acceptClientInvite.mutateAsync(inviteId);
+      toast.success("Client portal invitation accepted.");
     } catch (error) {
       notifyError(error);
     }
@@ -73,6 +87,39 @@ export function ClientPortalPage() {
           </Button>
         </div>
 
+        {clientInvites.isError ? (
+          <p className="text-sm text-destructive" role="alert">
+            {extractErrorMessage(clientInvites.error)}
+          </p>
+        ) : null}
+        {(clientInvites.data?.data.length ?? 0) > 0 ? (
+          <section className="space-y-3">
+            <h2 className="text-lg font-semibold">Pending invitations</h2>
+            {clientInvites.data?.data.map((invite) => (
+              <Card key={invite.id}>
+                <CardHeader>
+                  <CardTitle>{invite.organizationName}</CardTitle>
+                  <CardDescription>
+                    {invite.clientName} was invited to the client portal for{" "}
+                    {invite.invitedEmail}. Expires{" "}
+                    {new Date(invite.expiresAt).toLocaleDateString()}.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button
+                    onClick={() => void handleAcceptClientInvite(invite.id)}
+                    disabled={acceptClientInvite.isPending}
+                  >
+                    {acceptClientInvite.isPending
+                      ? "Accepting…"
+                      : "Accept invitation"}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </section>
+        ) : null}
+
         {requests.isPending ? (
           <p className="text-sm text-muted-foreground">Loading requests…</p>
         ) : requests.isError ? (
@@ -82,7 +129,9 @@ export function ClientPortalPage() {
         ) : requests.data.data.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center text-sm text-muted-foreground">
-              You&apos;re all caught up. New document requests will appear here.
+              {clientInvites.data?.data.length
+                ? "Accept an invitation above to activate your client portal."
+                : "You’re all caught up. New document requests will appear here."}
             </CardContent>
           </Card>
         ) : (
@@ -242,8 +291,18 @@ export function ClientPortalInvitePage({ token }: { token?: string }) {
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-center text-sm text-muted-foreground">
-                Invitation expires{" "}
-                {new Date(invitation.data.data.expiresAt).toLocaleDateString()}.
+                <p>
+                  To accept, create an account or sign in with the invited
+                  email, verify your address if prompted, then accept the
+                  invitation.
+                </p>
+                <p className="mt-2">
+                  Invitation expires{" "}
+                  {new Date(
+                    invitation.data.data.expiresAt,
+                  ).toLocaleDateString()}
+                  .
+                </p>
               </CardContent>
             </Card>
             {!isSignedIn ? (

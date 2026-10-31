@@ -2,6 +2,7 @@ import type {
   ApiResponse,
   ClientDocumentRequest,
   ClientInvitePreview,
+  ClientPortalInvite,
   ClientPortalDocumentDownload,
   ClientRecord,
   CreateClientRequest,
@@ -77,6 +78,20 @@ export const ClientPortalAPI = {
     const response = await axiosInstance.post(
       "/api/client-portal/invites/accept",
       { token },
+    );
+    return response.data as ApiResponse<null>;
+  },
+
+  listMyInvites: async (): Promise<ApiResponse<ClientPortalInvite[]>> => {
+    const response = await axiosInstance.get("/api/client-portal/invites/me");
+    return response.data as ApiResponse<ClientPortalInvite[]>;
+  },
+
+  acceptInviteFromInbox: async (
+    inviteId: string,
+  ): Promise<ApiResponse<null>> => {
+    const response = await axiosInstance.post(
+      `/api/client-portal/invites/${inviteId}/accept`,
     );
     return response.data as ApiResponse<null>;
   },

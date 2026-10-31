@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import type {
   ClientDocumentRequest,
   ClientInvitePreview,
+  ClientPortalInvite,
   ClientPortalDocumentDownload,
   ClientRecord,
   CreateClientRequest,
@@ -274,6 +275,17 @@ export class ClientPortalService {
     };
   }
 
+  async listPendingInvites(email: string): Promise<ClientPortalInvite[]> {
+    const invites = await this.repository.listPendingInvitesByEmail(email);
+    return invites.map((invite) => ({
+      id: invite.id,
+      organizationName: invite.organizationName,
+      clientName: invite.clientName,
+      invitedEmail: invite.invitedEmail,
+      expiresAt: isoDate(invite.expiresAt),
+    }));
+  }
+
   async acceptInvite(token: string, caller: Caller): Promise<void> {
     if (!caller.emailVerified) {
       throw new ForbiddenException(
@@ -301,6 +313,36 @@ export class ClientPortalService {
       throw new ForbiddenException('This organization is currently inactive.');
     }
 
+    await this.completeInviteAcceptance(invite, caller);
+  }
+
+  async acceptInviteById(inviteId: string, caller: Caller): Promise<void> {
+    if (!caller.emailVerified) {
+      throw new ForbiddenException(
+        'Verify your email before accepting this invite.',
+      );
+    }
+    const invite = await this.repository.findPendingInviteByIdAndEmail(
+      inviteId,
+      caller.email,
+    );
+    if (!invite) {
+      throw new NotFoundException('Invitation not found.');
+    }
+    if (invite.status !== 'pending' || invite.expiresAt <= new Date()) {
+      throw new BadRequestException('This invitation is no longer available.');
+    }
+    if (invite.deactivatedAt) {
+      throw new ForbiddenException('This organization is currently inactive.');
+    }
+
+    await this.completeInviteAcceptance(invite, caller);
+  }
+
+  private async completeInviteAcceptance(
+    invite: { inviteId: string; clientId: string },
+    caller: Caller,
+  ): Promise<void> {
     const accepted = await this.db
       .transaction()
       .execute((tx) =>

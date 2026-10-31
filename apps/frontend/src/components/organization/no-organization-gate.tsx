@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Building2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { CreateOrganizationForm } from "@/components/organization/create-organization-form";
 import { useAuthSession } from "@/hooks/api/use-auth";
 import { useMyPendingInvites } from "@/hooks/api/use-invites";
@@ -28,13 +29,18 @@ export function NoOrganizationGate() {
 
       <div className="space-y-2">
         <h1 className="text-xl font-semibold tracking-tight">
-          Create your organization
+          Welcome to Atlas Node
         </h1>
         <p className="mx-auto max-w-sm text-sm text-muted-foreground">
-          Everything in Atlas Node lives in an organization. You&apos;ll be the
-          owner and can invite teammates right after.
+          Create a firm workspace to manage clients and teammates. If an
+          accounting team invited you as a client, open your client portal
+          instead.
         </p>
       </div>
+
+      <Button asChild variant="outline">
+        <Link to="/client-portal">Open client portal</Link>
+      </Button>
 
       <Card className="w-full max-w-md text-left">
         <CardContent>

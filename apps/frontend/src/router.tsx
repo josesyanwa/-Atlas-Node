@@ -14,6 +14,7 @@ import { AcceptInvitePage } from "@/routes/accept-invite";
 import { AuthErrorPage } from "@/routes/auth-error";
 import {
   ClientPortalInvitePage,
+  ClientPortalHistoryPage,
   ClientPortalPage,
 } from "@/routes/client-portal";
 import { ClientsPage } from "@/routes/clients";
@@ -254,6 +255,31 @@ const clientPortalRoute = createRoute({
   component: ClientPortalPage,
 });
 
+const clientPortalHistoryRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/client-portal/history",
+  beforeLoad: async () => {
+    const sessionResult = await AuthAPI.getSession();
+    if (!sessionResult.data?.session) {
+      clearSignedOutUserState();
+      throw redirect({
+        to: "/sign-in",
+        search: { redirect: "/client-portal/history" },
+      });
+    }
+    if (sessionResult.data.user.emailVerified !== true) {
+      throw redirect({
+        to: "/verify-email",
+        search: {
+          email: sessionResult.data.user.email,
+          redirect: "/client-portal/history",
+        },
+      });
+    }
+  },
+  component: ClientPortalHistoryPage,
+});
+
 const protectedRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: "protected",
@@ -343,6 +369,7 @@ const routeTree = rootRoute.addChildren([
   acceptInviteRoute,
   clientPortalInviteRoute,
   clientPortalRoute,
+  clientPortalHistoryRoute,
   protectedRoute.addChildren([
     homeRoute,
     dashboardRoute,

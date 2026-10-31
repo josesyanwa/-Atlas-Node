@@ -54,7 +54,8 @@ export function ClientPortalPage() {
   const handleAcceptClientInvite = async (inviteId: string) => {
     try {
       await acceptClientInvite.mutateAsync(inviteId);
-      toast.success("Client portal invitation accepted.");
+      toast.success("Invitation accepted. Your document history is ready.");
+      await navigate({ to: "/client-portal/history" });
     } catch (error) {
       notifyError(error);
     }
@@ -64,17 +65,18 @@ export function ClientPortalPage() {
     <>
       <AuthThemeToggle />
       <main className="mx-auto min-h-screen w-full max-w-3xl space-y-6 px-4 py-10">
+        <ClientPortalNavigation currentPage="home" />
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
               Atlas Node · Client portal
             </p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-              Your document requests
+              Share documents with your accounting team
             </h1>
             <p className="mt-2 text-muted-foreground">
-              Upload requested files securely and check what your accounting
-              team is still waiting for.
+              Your accounting team will list the documents they need here.
+              Upload them securely and check what is still outstanding.
             </p>
           </div>
           <Button
@@ -86,7 +88,6 @@ export function ClientPortalPage() {
             Sign out
           </Button>
         </div>
-
         {clientInvites.isError ? (
           <p className="text-sm text-destructive" role="alert">
             {extractErrorMessage(clientInvites.error)}
@@ -100,8 +101,10 @@ export function ClientPortalPage() {
                 <CardHeader>
                   <CardTitle>{invite.organizationName}</CardTitle>
                   <CardDescription>
-                    {invite.clientName} was invited to the client portal for{" "}
-                    {invite.invitedEmail}. Expires{" "}
+                    {invite.organizationName} is asking you to share documents
+                    with its accounting team. Accept this invitation to see
+                    which documents they need from you. It was sent to{" "}
+                    {invite.invitedEmail} and expires on{" "}
                     {new Date(invite.expiresAt).toLocaleDateString()}.
                   </CardDescription>
                 </CardHeader>
@@ -130,8 +133,8 @@ export function ClientPortalPage() {
           <Card>
             <CardContent className="py-10 text-center text-sm text-muted-foreground">
               {clientInvites.data?.data.length
-                ? "Accept an invitation above to activate your client portal."
-                : "You’re all caught up. New document requests will appear here."}
+                ? "Accept an invitation above to see the documents your accounting team needs from you."
+                : "You’re all caught up. Any documents your accounting team asks you to provide will appear here."}
             </CardContent>
           </Card>
         ) : (
@@ -143,6 +146,148 @@ export function ClientPortalPage() {
         )}
       </main>
     </>
+  );
+}
+
+export function ClientPortalHistoryPage() {
+  const requests = useClientPortalRequests();
+
+  const download = async (documentId: string) => {
+    try {
+      const result = await ClientPortalAPI.clientDownload(documentId);
+      window.location.assign(result.data.url);
+    } catch (error) {
+      notifyError(error);
+    }
+  };
+
+  return (
+    <>
+      <AuthThemeToggle />
+      <main className="mx-auto min-h-screen w-full max-w-3xl space-y-6 px-4 py-10">
+        <ClientPortalNavigation currentPage="history" />
+        <div className="space-y-3">
+          <p className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            Atlas Node · Client portal
+          </p>
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Shared documents &amp; history
+          </h1>
+          <p className="text-muted-foreground">
+            See what your accounting team has asked for and review the files
+            you have shared with them.
+          </p>
+        </div>
+
+        {requests.isPending ? (
+          <p className="text-sm text-muted-foreground">Loading your history…</p>
+        ) : requests.isError ? (
+          <p className="text-sm text-destructive" role="alert">
+            {extractErrorMessage(requests.error)}
+          </p>
+        ) : requests.data.data.length === 0 ? (
+          <Card>
+            <CardContent className="py-10 text-center text-sm text-muted-foreground">
+              No document requests yet. When your accounting team asks you to
+              share something, it will appear here.
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {requests.data.data.map((request) => (
+              <Card key={request.id}>
+                <CardHeader>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <CardTitle>{request.title}</CardTitle>
+                      <CardDescription className="mt-1">
+                        Requested by{" "}
+                        {request.organizationName ?? "your accounting team"} ·{" "}
+                        {new Date(request.createdAt).toLocaleDateString()}
+                      </CardDescription>
+                    </div>
+                    <span className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground">
+                      {request.status === "received"
+                        ? "Documents shared"
+                        : "Waiting for your upload"}
+                    </span>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {request.documents.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      No files have been shared for this request yet.
+                    </p>
+                  ) : (
+                    <ul className="space-y-3">
+                      {request.documents.map((document) => (
+                        <li
+                          key={document.id}
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3"
+                        >
+                          <div>
+                            <p className="text-sm font-medium">
+                              {document.originalFilename}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Shared on{" "}
+                              {new Date(document.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void download(document.id)}
+                          >
+                            View file
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </main>
+    </>
+  );
+}
+
+function ClientPortalNavigation({
+  currentPage,
+}: {
+  currentPage: "home" | "history";
+}) {
+  return (
+    <nav
+      aria-label="Client portal navigation"
+      className="flex flex-wrap items-center gap-2 border-b pb-4"
+    >
+      <Button asChild variant="outline">
+        <Link to="/">Atlas Node home</Link>
+      </Button>
+      <Button asChild variant={currentPage === "home" ? "default" : "outline"}>
+        <Link
+          to="/client-portal"
+          aria-current={currentPage === "home" ? "page" : undefined}
+        >
+          Document requests
+        </Link>
+      </Button>
+      <Button
+        asChild
+        variant={currentPage === "history" ? "default" : "outline"}
+      >
+        <Link
+          to="/client-portal/history"
+          aria-current={currentPage === "history" ? "page" : undefined}
+        >
+          Shared documents &amp; history
+        </Link>
+      </Button>
+    </nav>
   );
 }
 
@@ -253,7 +398,8 @@ export function ClientPortalInvitePage({ token }: { token?: string }) {
     if (!token) return;
     try {
       await accept.mutateAsync(token);
-      await navigate({ to: "/client-portal" });
+      toast.success("Invitation accepted. Your document history is ready.");
+      await navigate({ to: "/client-portal/history" });
     } catch (error) {
       notifyError(error);
     }

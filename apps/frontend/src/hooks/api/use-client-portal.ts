@@ -139,10 +139,15 @@ export function useAcceptClientPortalInvite() {
   });
 }
 
-export function useClientPortalRequests() {
+export function useClientPortalRequests(options: {
+  enabled?: boolean;
+  refetchInterval?: number | false;
+} = {}) {
   return useQuery({
     queryKey: clientPortalKeys.portalRequests,
     queryFn: () => ClientPortalAPI.listPortalRequests(),
+    enabled: options.enabled ?? true,
+    refetchInterval: options.refetchInterval,
   });
 }
 

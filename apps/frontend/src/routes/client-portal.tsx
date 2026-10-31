@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { toast } from "sonner";
 import type { ClientDocumentRequest } from "@atlas-node/api-interfaces";
 import { AuthThemeToggle } from "@/components/theme/auth-theme-toggle";
+import { ClientDocumentRequestsBadge } from "@/components/organization/client-document-requests-badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -268,6 +269,7 @@ function ClientPortalNavigation({
       <Button asChild variant="outline">
         <Link to="/">Atlas Node home</Link>
       </Button>
+      <ClientDocumentRequestsBadge />
       <Button asChild variant={currentPage === "home" ? "default" : "outline"}>
         <Link
           to="/client-portal"

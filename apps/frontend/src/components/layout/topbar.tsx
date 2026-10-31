@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { OrgSwitcher } from "@/components/organization/org-switcher";
 import { PendingInvitesBadge } from "@/components/organization/pending-invites-badge";
+import { ClientDocumentRequestsBadge } from "@/components/organization/client-document-requests-badge";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import {
   clearSignedOutUserState,
@@ -50,6 +51,7 @@ export function Topbar({
 
       <div className="flex items-center gap-2">
         <PendingInvitesBadge />
+        <ClientDocumentRequestsBadge />
         <ThemeToggle />
         <Button
           variant="ghost"

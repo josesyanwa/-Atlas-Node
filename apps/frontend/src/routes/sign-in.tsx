@@ -93,11 +93,11 @@ export function SignInPage() {
             Atlas Node
           </p>
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            A shared workspace for your team.
+            Manage your team in one place.
           </h1>
           <p className="max-w-lg text-base leading-7 text-muted-foreground">
-            Atlas Node helps you manage your organization in one place: invite
-            teammates, manage member access, and keep team settings organized.
+            Atlas Node helps you manage your organization, invite teammates, and
+            control member access.
           </p>
         </section>
 

@@ -28,11 +28,10 @@ const navItems = [
 ] as const;
 
 /**
- * Reachable without an organization, or the links inside the takeover go
- * dead: the invites list (topbar bell, gate card) and the create page (org
- * switcher). Neither has children, so an exact match is enough.
+ * Reachable without an organization. The home page provides the client portal
+ * entry point, while invite and organization-creation routes remain available.
  */
-const NO_ORG_ROUTES = ["/invites", "/organizations/new"];
+const NO_ORG_ROUTES = ["/", "/invites", "/organizations/new"];
 
 /** The deepest nav item containing the path, so `/settings` isn't lit on its children. */
 function activeNavTarget(pathname: string): string | undefined {

@@ -149,6 +149,15 @@ export class ClientPortalRepository {
       .execute();
   }
 
+  async hasClientAccess(userId: string): Promise<boolean> {
+    const clientUser = await this.db
+      .selectFrom('clientUsers')
+      .select('clientId')
+      .where('userId', '=', userId)
+      .executeTakeFirst();
+    return !!clientUser;
+  }
+
   async findPendingInviteByIdAndEmail(inviteId: string, email: string) {
     return (
       (await this.db

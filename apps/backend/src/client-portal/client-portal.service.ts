@@ -286,6 +286,10 @@ export class ClientPortalService {
     }));
   }
 
+  async hasClientPortalAccess(userId: string): Promise<boolean> {
+    return this.repository.hasClientAccess(userId);
+  }
+
   async acceptInvite(token: string, caller: Caller): Promise<void> {
     if (!caller.emailVerified) {
       throw new ForbiddenException(

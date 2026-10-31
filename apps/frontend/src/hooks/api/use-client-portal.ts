@@ -109,6 +109,14 @@ export function useMyClientPortalInvites(userId?: string) {
   });
 }
 
+export function useMyClientPortalAccess(userId?: string) {
+  return useQuery({
+    queryKey: ["client-portal", "access", userId],
+    queryFn: () => ClientPortalAPI.getMyPortalAccess(),
+    enabled: !!userId,
+  });
+}
+
 export function useAcceptClientPortalInvite() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -120,6 +128,9 @@ export function useAcceptClientPortalInvite() {
       });
       await queryClient.invalidateQueries({
         queryKey: clientPortalKeys.portalRequests,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["client-portal", "access"],
       });
       await queryClient.invalidateQueries({
         queryKey: ["organizations", "me"],

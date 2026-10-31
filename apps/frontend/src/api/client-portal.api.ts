@@ -87,6 +87,13 @@ export const ClientPortalAPI = {
     return response.data as ApiResponse<ClientPortalInvite[]>;
   },
 
+  getMyPortalAccess: async (): Promise<
+    ApiResponse<{ hasAccess: boolean }>
+  > => {
+    const response = await axiosInstance.get("/api/client-portal/access");
+    return response.data as ApiResponse<{ hasAccess: boolean }>;
+  },
+
   acceptInviteFromInbox: async (
     inviteId: string,
   ): Promise<ApiResponse<null>> => {

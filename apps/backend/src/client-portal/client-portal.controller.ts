@@ -146,6 +146,21 @@ export class ClientPortalController {
     return { data, message: 'OK', success: true };
   }
 
+  @Get('access')
+  async hasClientPortalAccess(
+    @Session() session: SessionPayload,
+  ): Promise<ApiResponse<{ hasAccess: boolean }>> {
+    if (!session.user.emailVerified) {
+      throw new ForbiddenException(
+        'Verify your email before accessing client documents.',
+      );
+    }
+    const hasAccess = await this.portal.hasClientPortalAccess(
+      session.user.id,
+    );
+    return { data: { hasAccess }, message: 'OK', success: true };
+  }
+
   @Post('invites/accept')
   async acceptInvite(
     @Session() session: SessionPayload,

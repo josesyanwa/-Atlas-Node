@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { ClientPortalService } from './client-portal.service';
 
@@ -15,7 +16,12 @@ describe('ClientPortalService', () => {
     findInviteByTokenHash: jest.Mock;
     findPendingInviteByIdAndEmail: jest.Mock;
     acceptInvite: jest.Mock;
+    findClientByEmail: jest.Mock;
+    createClient: jest.Mock;
+    expirePendingInvites: jest.Mock;
+    createInvite: jest.Mock;
   };
+  let mailer: { sendInvite: jest.Mock };
   let storage: {
     upload: jest.Mock;
     delete: jest.Mock;
@@ -35,7 +41,12 @@ describe('ClientPortalService', () => {
       findInviteByTokenHash: jest.fn(),
       findPendingInviteByIdAndEmail: jest.fn(),
       acceptInvite: jest.fn().mockResolvedValue(true),
+      findClientByEmail: jest.fn(),
+      createClient: jest.fn(),
+      expirePendingInvites: jest.fn(),
+      createInvite: jest.fn(),
     };
+    mailer = { sendInvite: jest.fn() };
     storage = {
       upload: jest.fn().mockResolvedValue(undefined),
       delete: jest.fn().mockResolvedValue(undefined),
@@ -52,7 +63,7 @@ describe('ClientPortalService', () => {
     };
     service = new ClientPortalService(
       repository as never,
-      { sendInvite: jest.fn() } as never,
+      mailer as never,
       storage as never,
       { getOrThrow: jest.fn() } as never,
       db as never,
@@ -110,6 +121,42 @@ describe('ClientPortalService', () => {
     expect(storage.upload).not.toHaveBeenCalled();
   });
 
+  it('rejects a spoofed PDF MIME type before writing to storage', async () => {
+    repository.canClientAccessRequest.mockResolvedValue({
+      id: requestId,
+      deactivatedAt: null,
+    });
+
+    await expect(
+      service.uploadDocument({
+        requestId,
+        userId: 'linked-client',
+        filename: 'tax-return.pdf',
+        contentType: 'application/pdf',
+        body: Buffer.from('not actually a PDF'),
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(storage.upload).not.toHaveBeenCalled();
+  });
+
+  it('rejects a filename containing path separators', async () => {
+    repository.canClientAccessRequest.mockResolvedValue({
+      id: requestId,
+      deactivatedAt: null,
+    });
+
+    await expect(
+      service.uploadDocument({
+        requestId,
+        userId: 'linked-client',
+        filename: '../tax-return.pdf',
+        contentType: 'application/pdf',
+        body: Buffer.from('%PDF-1.7'),
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(storage.upload).not.toHaveBeenCalled();
+  });
+
   it('persists an uploaded document only for a linked client', async () => {
     repository.canClientAccessRequest.mockResolvedValue({
       id: requestId,
@@ -158,6 +205,30 @@ describe('ClientPortalService', () => {
     expect(storage.createDownloadUrl).not.toHaveBeenCalled();
   });
 
+  it('removes the stored object when its database record cannot be committed', async () => {
+    repository.canClientAccessRequest.mockResolvedValue({
+      id: requestId,
+      deactivatedAt: null,
+    });
+    repository.addDocumentAndMarkReceived.mockRejectedValue(
+      new Error('database unavailable'),
+    );
+
+    await expect(
+      service.uploadDocument({
+        requestId,
+        userId: 'linked-client',
+        filename: 'tax-return.pdf',
+        contentType: 'application/pdf',
+        body: Buffer.from('%PDF-1.7'),
+      }),
+    ).rejects.toThrow('database unavailable');
+    expect(storage.upload).toHaveBeenCalledTimes(1);
+    expect(storage.delete).toHaveBeenCalledWith(
+      expect.stringMatching(new RegExp(`^client-documents/${requestId}/`)),
+    );
+  });
+
   it('accepts an inbox invitation only through the invited email identity', async () => {
     repository.findPendingInviteByIdAndEmail.mockResolvedValue({
       inviteId: documentId,
@@ -183,5 +254,59 @@ describe('ClientPortalService', () => {
       'invited-client',
       expect.any(Object),
     );
+  });
+
+  it('reports the saved invitation when email delivery fails', async () => {
+    const client = {
+      id: requestId,
+      organizationId: 'organization-id',
+      name: 'Client',
+      email: 'client@example.com',
+      companyName: null,
+      createdByUserId: 'firm-user',
+      createdAt: new Date(),
+    };
+    repository.findClientByEmail.mockResolvedValue(null);
+    repository.createClient.mockResolvedValue(client);
+    repository.expirePendingInvites.mockResolvedValue(undefined);
+    repository.createInvite.mockResolvedValue({ id: documentId });
+    mailer.sendInvite.mockRejectedValue(new Error('provider rejected message'));
+
+    const query = (result: unknown) => ({
+      select: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      executeTakeFirst: jest.fn().mockResolvedValue(result),
+    });
+    db.selectFrom
+      .mockReturnValueOnce(query(undefined))
+      .mockReturnValueOnce(query({ name: 'Firm', deactivatedAt: null }));
+
+    const serviceWithFrontendUrl = new ClientPortalService(
+      repository as never,
+      mailer as never,
+      storage as never,
+      { getOrThrow: jest.fn().mockReturnValue('https://app.example') } as never,
+      db as never,
+    );
+
+    const delivery = serviceWithFrontendUrl.createClient(
+      'organization-id',
+      'firm-user',
+      {
+        name: 'Client',
+        email: 'client@example.com',
+      },
+    );
+    const error = await delivery.catch((failure: unknown) => failure);
+    expect(error).toBeInstanceOf(ServiceUnavailableException);
+    expect(error).toHaveProperty(
+      'message',
+      expect.stringContaining(
+        'The client and invitation were saved, but the email could not be sent.',
+      ),
+    );
+    expect(repository.createClient).toHaveBeenCalledTimes(1);
+    expect(repository.createInvite).toHaveBeenCalledTimes(1);
+    expect(mailer.sendInvite).toHaveBeenCalledTimes(1);
   });
 });

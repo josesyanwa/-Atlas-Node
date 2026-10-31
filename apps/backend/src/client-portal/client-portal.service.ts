@@ -6,6 +6,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type {
@@ -48,6 +49,49 @@ function isoDate(value: Date | string): string {
   return value instanceof Date
     ? value.toISOString()
     : new Date(value).toISOString();
+}
+
+function hasExpectedFileSignature(contentType: string, body: Buffer): boolean {
+  switch (contentType) {
+    case 'application/pdf':
+      return body.subarray(0, 5).toString('ascii') === '%PDF-';
+    case 'image/jpeg':
+      return (
+        body.length >= 3 &&
+        body[0] === 0xff &&
+        body[1] === 0xd8 &&
+        body[2] === 0xff
+      );
+    case 'image/png':
+      return body
+        .subarray(0, 8)
+        .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+    case 'text/csv':
+      try {
+        const text = new TextDecoder('utf-8', { fatal: true }).decode(body);
+        for (const character of text) {
+          const code = character.codePointAt(0)!;
+          if (
+            code === 0x7f ||
+            (code < 0x20 && code !== 0x09 && code !== 0x0a && code !== 0x0d)
+          ) {
+            return false;
+          }
+        }
+        return true;
+      } catch {
+        return false;
+      }
+    case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+    case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+      return (
+        body.subarray(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04])) ||
+        body.subarray(0, 4).equals(Buffer.from([0x50, 0x4b, 0x05, 0x06])) ||
+        body.subarray(0, 4).equals(Buffer.from([0x50, 0x4b, 0x07, 0x08]))
+      );
+    default:
+      return false;
+  }
 }
 
 function serializeClient(row: {
@@ -125,12 +169,21 @@ export class ClientPortalService {
       );
     });
 
-    await this.mailer.sendInvite({
-      to: client.email,
-      clientName: client.name,
-      organizationName: organization.name,
-      inviteUrl: this.buildInviteUrl(rawToken),
-    });
+    try {
+      await this.mailer.sendInvite({
+        to: client.email,
+        clientName: client.name,
+        organizationName: organization.name,
+        inviteUrl: this.buildInviteUrl(rawToken),
+      });
+    } catch {
+      this.logger.error(
+        'Client portal invitation email delivery failed after the invitation was saved.',
+      );
+      throw new ServiceUnavailableException(
+        'The client and invitation were saved, but the email could not be sent. Check your email configuration and resend the invitation from the client list.',
+      );
+    }
   }
 
   async createClient(
@@ -385,14 +438,19 @@ export class ClientPortalService {
       throw new BadRequestException('Files must be between 1 byte and 10 MiB.');
     }
 
-    const filename = Array.from(input.filename)
-      .filter((character) => {
-        const code = character.charCodeAt(0);
-        return code >= 32 && code !== 127;
-      })
-      .join('')
-      .trim();
-    if (!filename || filename.length > 255) {
+    const filename = input.filename.trim();
+    const hasUnsafeFilenameCharacter = Array.from(filename).some(
+      (character) => {
+        const code = character.codePointAt(0)!;
+        return (
+          character === '/' ||
+          character === '\\' ||
+          code <= 0x1f ||
+          code === 0x7f
+        );
+      },
+    );
+    if (!filename || filename.length > 255 || hasUnsafeFilenameCharacter) {
       throw new BadRequestException(
         'Provide a valid filename up to 255 characters.',
       );
@@ -405,6 +463,11 @@ export class ClientPortalService {
     ) {
       throw new BadRequestException(
         'Upload a PDF, JPG, PNG, CSV, XLSX, or DOCX file.',
+      );
+    }
+    if (!hasExpectedFileSignature(contentType, input.body)) {
+      throw new BadRequestException(
+        'The file contents do not match the selected file type.',
       );
     }
 

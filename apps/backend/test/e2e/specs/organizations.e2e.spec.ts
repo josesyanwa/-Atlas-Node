@@ -266,7 +266,7 @@ describe('organizations', () => {
     expect(statuses.sort()).toEqual([201, 409]);
   });
 
-  it('lets only one of two concurrent ownership transfers win', async () => {
+  it('allows only one concurrent ownership transfer and denies the former owner', async () => {
     const owner = await createVerifiedUser(testApp.server, db, {
       email: 'transfer-owner@example.com',
       password: PASSWORD,
@@ -305,7 +305,12 @@ describe('organizations', () => {
           .then((r) => r.status),
       ),
     );
-    expect(statuses.sort()).toEqual([201, 409]);
+    // The competing request may hit the owner guard after commit (403) or
+    // reach the service with the former owner's stale role (409).
+    expect(statuses.filter((status) => status === 201)).toHaveLength(1);
+    expect(
+      statuses.filter((status) => status === 403 || status === 409),
+    ).toHaveLength(1);
 
     const owners = await db
       .selectFrom('organizationMembers')

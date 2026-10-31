@@ -80,6 +80,18 @@ describe('AllExceptionsFilter', () => {
     expect(passed.message).toBe('teapot');
   });
 
+  it('preserves service-unavailable status with a matching API error code', () => {
+    const filter = new AllExceptionsFilter({} as never);
+    const raw = new HttpException(
+      'temporarily unavailable',
+      HttpStatus.SERVICE_UNAVAILABLE,
+    );
+    filter.catch(raw, makeHost({ url: '/api/client-portal/invites' }));
+    const passed = firstCatchArg<ApiException>(superCatch);
+    expect(passed.code).toBe('SERVICE_UNAVAILABLE');
+    expect(passed.getStatus()).toBe(HttpStatus.SERVICE_UNAVAILABLE);
+  });
+
   it('replaces unhandled errors with INTERNAL_SERVER_ERROR and never leaks the original message', () => {
     const filter = new AllExceptionsFilter({} as never);
     const errorSpy = jest

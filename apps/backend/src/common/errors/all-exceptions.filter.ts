@@ -13,6 +13,7 @@ const STATUS_TO_CODE: Record<number, string> = {
   401: 'UNAUTHENTICATED',
   403: 'FORBIDDEN',
   404: 'NOT_FOUND',
+  503: 'SERVICE_UNAVAILABLE',
 };
 
 @Catch()

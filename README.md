@@ -72,6 +72,12 @@ This is what a real production foundation looks like. Fork it, rename it, and st
 
 The portal is a workflow foundation, not a compliance certification. Firms handling regulated financial records should add malware scanning, retention/deletion policies, audit logging, and any controls required by their jurisdiction before production use.
 
+### Engineering and operations
+
+- Pull requests and pushes to `main` run builds, focused backend lint, unit tests, frontend checks, and PostgreSQL-backed end-to-end tests; see [CI](.github/workflows/ci.yml).
+- The [Atlas Node case study](docs/portfolio/atlas-node-case-study.md) summarizes the architecture and design trade-offs for a project portfolio.
+- The [production operations runbook](docs/operations/production-readiness.md) covers deployment, monitoring, recovery, backups, and remaining security boundaries.
+
 ### Organization Dashboard Prototype
 
 - **Organization overview** at `/dashboard` with live member counts and the current subscription plan

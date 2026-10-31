@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.8.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.15.0
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: >-
+          pnpm --filter backend exec eslint
+          src/client-portal/client-portal.service.ts
+          src/client-portal/client-portal.service.spec.ts
+          src/common/errors/all-exceptions.filter.ts
+          src/common/errors/__tests__/all-exceptions.filter.spec.ts
+          test/e2e/specs/client-portal-isolation.e2e.spec.ts
+          test/e2e/specs/organizations.e2e.spec.ts
+      - run: pnpm --filter backend exec jest --runInBand
+      - run: pnpm --filter frontend test
+      - run: pnpm --filter backend test:e2e

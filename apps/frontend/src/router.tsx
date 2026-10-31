@@ -12,6 +12,11 @@ import { clearSignedOutUserState } from "@/hooks/api/use-auth";
 import { normalizeRedirectPath } from "@/lib/auth-redirect";
 import { AcceptInvitePage } from "@/routes/accept-invite";
 import { AuthErrorPage } from "@/routes/auth-error";
+import {
+  ClientPortalInvitePage,
+  ClientPortalPage,
+} from "@/routes/client-portal";
+import { ClientsPage } from "@/routes/clients";
 import { CreateOrganizationPage } from "@/routes/create-organization";
 import { DashboardPage } from "@/routes/dashboard";
 import { ForgotPasswordPage } from "@/routes/forgot-password";
@@ -58,9 +63,7 @@ const authSearchSchema = (search: Record<string, unknown>): AuthSearch => ({
   email: typeof search.email === "string" ? search.email : undefined,
 });
 
-const signInSearchSchema = (
-  search: Record<string, unknown>,
-): SignInSearch => ({
+const signInSearchSchema = (search: Record<string, unknown>): SignInSearch => ({
   redirect: typeof search.redirect === "string" ? search.redirect : undefined,
   email: typeof search.email === "string" ? search.email : undefined,
   reset: search.reset === "success" ? "success" : undefined,
@@ -175,7 +178,10 @@ const verifyEmailRoute = createRoute({
   validateSearch: verifyEmailSearchSchema,
   beforeLoad: async ({ search }) => {
     const sessionResult = await AuthAPI.getSession();
-    if (sessionResult.data?.session && sessionResult.data.user.emailVerified === true) {
+    if (
+      sessionResult.data?.session &&
+      sessionResult.data.user.emailVerified === true
+    ) {
       throw redirect({ to: normalizeRedirectPath(search.redirect) });
     }
   },
@@ -211,6 +217,41 @@ const acceptInviteRoute = createRoute({
   path: "/accept-invite",
   validateSearch: acceptInviteSearchSchema,
   component: AcceptInvitePage,
+});
+
+const clientPortalInviteRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/client-portal/invite",
+  validateSearch: acceptInviteSearchSchema,
+  component: function ClientPortalInviteRoute() {
+    const search = clientPortalInviteRoute.useSearch();
+    return <ClientPortalInvitePage token={search.token} />;
+  },
+});
+
+const clientPortalRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/client-portal",
+  beforeLoad: async () => {
+    const sessionResult = await AuthAPI.getSession();
+    if (!sessionResult.data?.session) {
+      clearSignedOutUserState();
+      throw redirect({
+        to: "/sign-in",
+        search: { redirect: "/client-portal" },
+      });
+    }
+    if (sessionResult.data.user.emailVerified !== true) {
+      throw redirect({
+        to: "/verify-email",
+        search: {
+          email: sessionResult.data.user.email,
+          redirect: "/client-portal",
+        },
+      });
+    }
+  },
+  component: ClientPortalPage,
 });
 
 const protectedRoute = createRoute({
@@ -254,6 +295,12 @@ const dashboardRoute = createRoute({
   component: DashboardPage,
 });
 
+const clientsRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/clients",
+  component: ClientsPage,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: "/settings",
@@ -294,9 +341,12 @@ const routeTree = rootRoute.addChildren([
   resetPasswordRoute,
   authErrorRoute,
   acceptInviteRoute,
+  clientPortalInviteRoute,
+  clientPortalRoute,
   protectedRoute.addChildren([
     homeRoute,
     dashboardRoute,
+    clientsRoute,
     settingsRoute,
     createOrganizationRoute,
     pendingInvitesRoute,

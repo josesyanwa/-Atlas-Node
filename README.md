@@ -61,7 +61,18 @@ This is what a real production foundation looks like. Fork it, rename it, and st
 - **Active org context** via `X-Organization-Id` header, set automatically by the frontend Axios interceptor
 - **Per-route role requirements** with the `@RequireOrgRole('admin')` decorator
 
-### B2B Dashboard Prototype
+### Accounting Client Portal
+
+- **Client onboarding**: create organization-scoped client records and email a private portal invitation
+- **Separate client accounts**: clients accept invitations using verified accounts and can access only their own requests and uploaded files
+- **Document collection**: firm members create requests with instructions and due dates; uploads move requests from `requested` to `received`
+- **Private file handling**: files are stored in the private Neon Object Storage bucket, with short-lived signed download links
+- **Supported uploads**: PDF, JPG, PNG, CSV, XLSX, and DOCX up to 10 MiB per file
+- **Current MVP boundaries**: no billing, OCR, e-signatures, automated reminders, virus scanning, or client review workflow yet
+
+The portal is a workflow foundation, not a compliance certification. Firms handling regulated financial records should add malware scanning, retention/deletion policies, audit logging, and any controls required by their jurisdiction before production use.
+
+### Organization Dashboard Prototype
 
 - **Organization overview** at `/dashboard` with live member counts and the current subscription plan
 - **Live organization member counts, roles, and join dates**, plus the persisted plan and quota
@@ -87,11 +98,12 @@ This is what a real production foundation looks like. Fork it, rename it, and st
 - **Form validation** with **Zod** schemas shared between client and server
 - **Sidebar layout** with org switcher, pending invites badge, sign-out
 - **Pages included:** sign-in, sign-up, Google sign-in/up, email verification, dashboard, settings, organization create/settings/members, accept invite, pending invites, auth error
+- **Client portal pages:** firm client management, client invitation acceptance, and a separate client-only document request and upload portal
 - **Geist Variable** font preinstalled for that crisp, modern look
 
 ### Backend
 
-- **NestJS 11** with global `ConfigModule`, global Kysely DB provider, and modular feature areas (`auth`, `organizations`)
+- **NestJS 11** with global `ConfigModule`, global Kysely DB provider, and modular feature areas (`auth`, `organizations`, `client-portal`)
 - **Body parser disabled at root** so Better Auth can handle its own parsing; JSON middleware is applied selectively per controller
 - **Global `OrgContextGuard`** that resolves the active org from the `X-Organization-Id` header and attaches it to every request
 - **Custom decorators**: `@OrgMembership()`, `@RequireOrgRole(level)`, `@AllowAnonymous()`, `@Session()`
@@ -203,6 +215,16 @@ GOOGLE_CLIENT_SECRET=<google oauth client secret>
 
 > **Email delivery:** [Resend](https://resend.com)'s `onboarding@resend.dev` sender is for testing and can only deliver to the email address associated with your Resend account. To send codes to other recipients, verify a domain in Resend and set `EMAIL_FROM` to an address on that domain (for example, `Atlas Node <noreply@your-verified-domain.com>`).
 
+### Private document storage
+
+The client portal uses a private Neon Object Storage bucket named `client-documents`. On a supported Neon region, provision it on the branch selected in `.neon` with:
+
+```bash
+neon deploy
+```
+
+`neon deploy` pulls the branch's generated `AWS_ENDPOINT_URL_S3`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, and `AWS_SECRET_ACCESS_KEY` into the repository-root `.env.local`. For local backend development, copy those four values into `apps/backend/.env`; in Render, add them as private environment variables. Never expose the storage credentials in Vite or any `VITE_*` variable. The credentials are branch-scoped, so use the values for the same branch as `DATABASE_URL`.
+
 ### 4. Run migrations
 
 ```bash
@@ -220,6 +242,7 @@ pnpm dev
 - Auth OpenAPI playground → http://localhost:3000/api/auth/reference (non-production only)
 
 Sign up with any email, enter the OTP from the email Resend sends you, and you're in.
+After the client portal migration and storage setup, firm admins can add clients under **Clients**, send document requests, and clients can use their invitation link to upload files.
 
 ---
 
@@ -227,19 +250,19 @@ Sign up with any email, enter the OTP from the email Resend sends you, and you'r
 
 ### Root
 
-| Script                | What it does                                  |
-| --------------------- | --------------------------------------------- |
-| `pnpm dev`            | Run frontend + backend in parallel            |
-| `pnpm dev:frontend`   | Frontend only                                 |
-| `pnpm dev:backend`    | Backend only                                  |
-| `pnpm build`          | Build packages, then both apps                |
-| `pnpm build:packages` | Build shared packages only                    |
-| `pnpm lint`           | Lint every workspace                          |
-| `pnpm db:generate`    | Create a new (empty) Kysely migration file    |
-| `pnpm db:up`          | Apply pending migrations                      |
-| `pnpm db:down`        | Roll back the last migration                  |
-| `pnpm db:status`      | Show migration status                         |
-| `pnpm db:fresh`       | Drop everything and re-apply (dev only)       |
+| Script                | What it does                               |
+| --------------------- | ------------------------------------------ |
+| `pnpm dev`            | Run frontend + backend in parallel         |
+| `pnpm dev:frontend`   | Frontend only                              |
+| `pnpm dev:backend`    | Backend only                               |
+| `pnpm build`          | Build packages, then both apps             |
+| `pnpm build:packages` | Build shared packages only                 |
+| `pnpm lint`           | Lint every workspace                       |
+| `pnpm db:generate`    | Create a new (empty) Kysely migration file |
+| `pnpm db:up`          | Apply pending migrations                   |
+| `pnpm db:down`        | Roll back the last migration               |
+| `pnpm db:status`      | Show migration status                      |
+| `pnpm db:fresh`       | Drop everything and re-apply (dev only)    |
 
 ### Backend (`cd apps/backend`)
 
@@ -303,6 +326,15 @@ This means org context is automatic for the frontend and enforced for every prot
 2. **Anyone with the link** can hit `GET /api/invites/preview?token=...` (anonymous) to see org name + inviter before signing up.
 3. **Invitee signs up / signs in**, then `POST /api/invites/accept` looks up the hash, verifies email match + expiry + status, and atomically (transaction) creates the membership and marks the invite accepted.
 4. Resending rotates the token; revoking flips the status. Pending invites are unique per `(org, email)` via a partial unique index.
+
+### How the client portal works
+
+1. A firm admin creates an organization-scoped client and sends a 7-day invitation. The raw invitation token is only emailed; Postgres stores its SHA-256 hash.
+2. The client signs up or signs in with the invited email, verifies it, and accepts the invite. A separate client-user relationship grants access without adding the client to the firm's internal RBAC membership.
+3. Firm members create document requests. An authenticated client can list only requests connected to their client-user relationship and upload allowed files.
+4. The backend receives each upload (up to 10 MiB) into the private Neon bucket, stores object keys and metadata in Postgres, and returns short-lived, attachment-only signed download URLs after checking tenant/client ownership.
+
+Client uploads are limited to 10 MiB each (PDF, JPG/JPEG, PNG, CSV, XLSX, DOCX). The MVP does not scan files for malware; add scanning and appropriate retention/audit controls before handling regulated records.
 
 ### How encryption-at-rest works
 

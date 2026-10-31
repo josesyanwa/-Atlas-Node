@@ -2,6 +2,8 @@ export type OrganizationRole = "owner" | "admin" | "viewer";
 export type InviteRole = "admin" | "viewer";
 export type InviteStatus = "pending" | "accepted" | "revoked" | "expired";
 export type SubscriptionPlan = "free" | "pro" | "enterprise";
+export type ClientInviteStatus = "pending" | "accepted" | "revoked" | "expired";
+export type DocumentRequestStatus = "requested" | "received";
 
 export interface Organization {
   id: string;

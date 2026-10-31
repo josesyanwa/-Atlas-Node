@@ -44,6 +44,7 @@ export async function createFileDatabase(): Promise<FileDatabase> {
 
   const databaseUrl = withDatabase(adminUrl, databaseName);
   process.env.DATABASE_URL = databaseUrl;
+  process.env.DATABASE_URL_UNPOOLED = databaseUrl;
 
   const pool = new Pool({ connectionString: databaseUrl, max: 2 });
   const db = new Kysely<Database>({

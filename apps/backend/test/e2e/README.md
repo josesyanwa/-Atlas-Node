@@ -56,7 +56,7 @@ code actually runs.
 - **Once per worker** (`setup-file.ts`): load `.env.test`, apply the injected
   Temporal address, install the `resend` mock.
 - **Once per file** (`createFileDatabase()`): `CREATE DATABASE … TEMPLATE
-  e2e_template`, a near-instant file copy, then point `DATABASE_URL` at it and
+e2e_template`, a near-instant file copy, then point `DATABASE_URL` at it and
   return a `Kysely<Database>` configured like the application's.
 
 ## Writing a new spec

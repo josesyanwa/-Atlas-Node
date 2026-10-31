@@ -44,4 +44,6 @@ export * from "./requests/auth.requests";
 export * from "./responses/auth.responses";
 export * from "./requests/organization.requests";
 export * from "./responses/organization.responses";
+export * from "./requests/client-portal.requests";
+export * from "./responses/client-portal.responses";
 export * from "./responses/health.responses";

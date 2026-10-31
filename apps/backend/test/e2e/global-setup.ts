@@ -83,6 +83,7 @@ export async function setup(project: TestProject): Promise<void> {
         env: {
           ...process.env,
           DATABASE_URL: withDatabase(adminUrl, TEMPLATE_DB),
+          DATABASE_URL_UNPOOLED: withDatabase(adminUrl, TEMPLATE_DB),
         },
       });
     } catch (error) {

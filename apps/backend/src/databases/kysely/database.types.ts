@@ -30,6 +30,8 @@ export type OrganizationRole = 'owner' | 'admin' | 'viewer';
 export type InviteRole = 'admin' | 'viewer';
 export type InviteStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
 export type SubscriptionPlan = 'free' | 'pro' | 'enterprise';
+export type ClientInviteStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
+export type DocumentRequestStatus = 'requested' | 'received';
 
 // ---------------------------------------------------------------------------
 // public schema
@@ -69,6 +71,58 @@ export interface OrganizationInvitesTable {
   acceptedAt: Date | null;
   createdAt: GeneratedTimestamp;
   updatedAt: GeneratedTimestamp;
+}
+
+export interface ClientsTable {
+  id: Generated<string>;
+  organizationId: string;
+  name: string;
+  email: string;
+  companyName: string | null;
+  createdByUserId: string;
+  createdAt: GeneratedTimestamp;
+  updatedAt: GeneratedTimestamp;
+}
+
+export interface ClientUsersTable {
+  clientId: string;
+  userId: string;
+  createdAt: GeneratedTimestamp;
+}
+
+export interface ClientPortalInvitesTable {
+  id: Generated<string>;
+  clientId: string;
+  tokenHash: string;
+  status: Generated<ClientInviteStatus>;
+  expiresAt: Date;
+  acceptedByUserId: string | null;
+  acceptedAt: Date | null;
+  createdAt: GeneratedTimestamp;
+}
+
+export interface DocumentRequestsTable {
+  id: Generated<string>;
+  organizationId: string;
+  clientId: string;
+  title: string;
+  description: string | null;
+  dueDate: string | null;
+  status: Generated<DocumentRequestStatus>;
+  requestedByUserId: string;
+  createdAt: GeneratedTimestamp;
+  updatedAt: GeneratedTimestamp;
+}
+
+export interface ClientDocumentsTable {
+  id: Generated<string>;
+  requestId: string;
+  objectKey: string;
+  originalFilename: string;
+  contentType: string;
+  sizeBytes: number | string;
+  uploadedByUserId: string;
+  createdAt: GeneratedTimestamp;
 }
 
 // ---------------------------------------------------------------------------
@@ -130,6 +184,11 @@ export interface Database {
   organizations: OrganizationsTable;
   organizationMembers: OrganizationMembersTable;
   organizationInvites: OrganizationInvitesTable;
+  clients: ClientsTable;
+  clientUsers: ClientUsersTable;
+  clientPortalInvites: ClientPortalInvitesTable;
+  documentRequests: DocumentRequestsTable;
+  clientDocuments: ClientDocumentsTable;
 
   'auth.user': AuthUserTable;
   'auth.session': AuthSessionTable;

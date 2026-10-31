@@ -1,5 +1,11 @@
 import { Link, Outlet, useLocation, useMatches } from "@tanstack/react-router";
-import { Home, LayoutDashboard, Settings, Users } from "lucide-react";
+import {
+  BriefcaseBusiness,
+  Home,
+  LayoutDashboard,
+  Settings,
+  Users,
+} from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +21,7 @@ import { Topbar } from "./topbar";
 const navItems = [
   { icon: Home, label: "Home", to: "/" },
   { icon: LayoutDashboard, label: "Dashboard", to: "/dashboard" },
+  { icon: BriefcaseBusiness, label: "Clients", to: "/clients" },
   { icon: Settings, label: "Settings", to: "/settings" },
   { icon: Settings, label: "Organization", to: "/settings/organization" },
   { icon: Users, label: "Members", to: "/settings/organization/members" },
@@ -98,7 +105,7 @@ export function AppShell() {
           <Separator />
           <div className="p-3">
             <p className="px-3 text-xs text-muted-foreground">
-              All app routes are protected.
+              Firm workspace routes are protected.
             </p>
           </div>
         </aside>

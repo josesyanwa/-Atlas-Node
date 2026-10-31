@@ -10,6 +10,7 @@ import { OrganizationsModule } from './organizations';
 import { QueueModule } from './queue/queue.module';
 import { TemporalModule } from './temporal';
 import { LoggerModule, RequestIdMiddleware } from './logger';
+import { ClientPortalModule } from './client-portal/client-portal.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { LoggerModule, RequestIdMiddleware } from './logger';
     TemporalModule.forRoot(),
     AppAuthModule,
     OrganizationsModule,
+    ClientPortalModule,
     QueueModule,
   ],
   controllers: [AppController, HealthController],

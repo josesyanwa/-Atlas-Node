@@ -1,5 +1,5 @@
 import { Link, useSearch } from "@tanstack/react-router";
-import { Building2, Rocket, ShieldCheck, UsersRound } from "lucide-react";
+import { Building2, FileCheck2, Rocket, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 
 import { EmailAuthForm } from "@/components/auth/email-auth-form";
@@ -39,7 +39,10 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export function SignUpPage() {
-  const search = useSearch({ strict: false }) as { redirect?: string; email?: string };
+  const search = useSearch({ strict: false }) as {
+    redirect?: string;
+    email?: string;
+  };
   const redirectTo = normalizeRedirectPath(search.redirect);
   const callbackURL = toAbsoluteCallbackURL(redirectTo);
 
@@ -67,7 +70,9 @@ export function SignUpPage() {
     });
 
     if (result.error) {
-      setErrorMessage(getErrorMessage(result.error, "Unable to create account."));
+      setErrorMessage(
+        getErrorMessage(result.error, "Unable to create account."),
+      );
       return;
     }
 
@@ -89,15 +94,14 @@ export function SignUpPage() {
         <section className="mx-auto w-full max-w-xl space-y-8">
           <div className="space-y-4">
             <p className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              Atlas Node
+              Atlas Node · Client portal for accounting teams
             </p>
             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-              Your team, organized from day one.
+              Client onboarding, without the email chase.
             </h1>
             <p className="max-w-lg text-base leading-7 text-muted-foreground">
-              Bring your organization and teammates together in one clear,
-              secure workspace. Manage access, collaborate with the right
-              people, and keep the essentials close at hand.
+              Give clients one secure place to send documents. Your firm can
+              request what it needs and see what has arrived.
             </p>
           </div>
 
@@ -107,9 +111,11 @@ export function SignUpPage() {
                 <Building2 className="size-5" aria-hidden="true" />
               </span>
               <div className="space-y-1">
-                <h2 className="text-sm font-medium">One shared workspace</h2>
+                <h2 className="text-sm font-medium">
+                  Organize client requests
+                </h2>
                 <p className="text-sm leading-6 text-muted-foreground">
-                  Keep your organization and its members together in one place.
+                  Keep each client&apos;s document requests and files together.
                 </p>
               </div>
             </li>
@@ -118,20 +124,20 @@ export function SignUpPage() {
                 <ShieldCheck className="size-5" aria-hidden="true" />
               </span>
               <div className="space-y-1">
-                <h2 className="text-sm font-medium">Access that fits each role</h2>
+                <h2 className="text-sm font-medium">Private client access</h2>
                 <p className="text-sm leading-6 text-muted-foreground">
-                  Give owners, admins, and viewers the right level of access.
+                  Clients only see requests and files assigned to their account.
                 </p>
               </div>
             </li>
             <li className="flex gap-4">
               <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted">
-                <UsersRound className="size-5" aria-hidden="true" />
+                <FileCheck2 className="size-5" aria-hidden="true" />
               </span>
               <div className="space-y-1">
-                <h2 className="text-sm font-medium">Bring people in easily</h2>
+                <h2 className="text-sm font-medium">Track what has arrived</h2>
                 <p className="text-sm leading-6 text-muted-foreground">
-                  Invite teammates and manage membership as your team grows.
+                  Add due dates and see which document requests are still open.
                 </p>
               </div>
             </li>

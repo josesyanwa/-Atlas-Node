@@ -90,14 +90,15 @@ export function SignInPage() {
       <main className="mx-auto grid min-h-screen w-full max-w-5xl items-center gap-10 px-4 py-10 md:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] md:gap-16 md:px-8">
         <section className="mx-auto w-full max-w-xl space-y-4">
           <p className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            Atlas Node
+            Atlas Node · Client portal for accounting teams
           </p>
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Manage your team in one place.
+            Client onboarding, without the email chase.
           </h1>
           <p className="max-w-lg text-base leading-7 text-muted-foreground">
-            Atlas Node helps you manage your organization, invite teammates, and
-            control member access.
+            Atlas Node helps small accounting and bookkeeping firms invite
+            clients, request financial documents, and track what has been
+            received through a private portal.
           </p>
         </section>
 

@@ -18,6 +18,10 @@ deploy/
 .idea/
 *.swp
 *.swo
+/.agents/
+/.claude/
+/.cursor/
+/.vscode/
 
 # OS
 .DS_Store

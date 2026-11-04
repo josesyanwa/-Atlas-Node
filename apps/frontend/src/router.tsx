@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import {
   Outlet,
   createRootRoute,
@@ -7,31 +8,112 @@ import {
 } from "@tanstack/react-router";
 
 import { AuthAPI } from "@/api/auth.api";
-import { AppShell } from "@/components/layout/app-shell";
 import { clearSignedOutUserState } from "@/hooks/api/use-auth";
 import { normalizeRedirectPath } from "@/lib/auth-redirect";
-import { AcceptInvitePage } from "@/routes/accept-invite";
-import { AuthErrorPage } from "@/routes/auth-error";
-import {
-  ClientPortalInvitePage,
-  ClientPortalHistoryPage,
-  ClientPortalPage,
-} from "@/routes/client-portal";
-import { ClientsPage } from "@/routes/clients";
-import { CreateOrganizationPage } from "@/routes/create-organization";
-import { DashboardPage } from "@/routes/dashboard";
-import { ForgotPasswordPage } from "@/routes/forgot-password";
-import { GoogleSignInPage } from "@/routes/google-sign-in";
-import { GoogleSignUpPage } from "@/routes/google-sign-up";
-import { HomePage } from "@/routes/home";
-import { OrganizationMembersPage } from "@/routes/organization-members";
-import { OrganizationSettingsPage } from "@/routes/organization-settings";
-import { PendingInvitesPage } from "@/routes/pending-invites";
-import { ResetPasswordPage } from "@/routes/reset-password";
-import { SettingsPage } from "@/routes/settings";
-import { SignInPage } from "@/routes/sign-in";
-import { SignUpPage } from "@/routes/sign-up";
-import { VerifyEmailPage } from "@/routes/verify-email";
+
+const AppShell = lazy(() =>
+  import("@/components/layout/app-shell").then((module) => ({
+    default: module.AppShell,
+  })),
+);
+const AcceptInvitePage = lazy(() =>
+  import("@/routes/accept-invite").then((module) => ({
+    default: module.AcceptInvitePage,
+  })),
+);
+const AuthErrorPage = lazy(() =>
+  import("@/routes/auth-error").then((module) => ({
+    default: module.AuthErrorPage,
+  })),
+);
+const ClientPortalHistoryPage = lazy(() =>
+  import("@/routes/client-portal").then((module) => ({
+    default: module.ClientPortalHistoryPage,
+  })),
+);
+const ClientPortalPage = lazy(() =>
+  import("@/routes/client-portal").then((module) => ({
+    default: module.ClientPortalPage,
+  })),
+);
+const ClientPortalInvitePage = lazy(() =>
+  import("@/routes/client-portal").then((module) => ({
+    default: module.ClientPortalInvitePage,
+  })),
+);
+const ClientsPage = lazy(() =>
+  import("@/routes/clients").then((module) => ({
+    default: module.ClientsPage,
+  })),
+);
+const CreateOrganizationPage = lazy(() =>
+  import("@/routes/create-organization").then((module) => ({
+    default: module.CreateOrganizationPage,
+  })),
+);
+const DashboardPage = lazy(() =>
+  import("@/routes/dashboard").then((module) => ({
+    default: module.DashboardPage,
+  })),
+);
+const ForgotPasswordPage = lazy(() =>
+  import("@/routes/forgot-password").then((module) => ({
+    default: module.ForgotPasswordPage,
+  })),
+);
+const GoogleSignInPage = lazy(() =>
+  import("@/routes/google-sign-in").then((module) => ({
+    default: module.GoogleSignInPage,
+  })),
+);
+const GoogleSignUpPage = lazy(() =>
+  import("@/routes/google-sign-up").then((module) => ({
+    default: module.GoogleSignUpPage,
+  })),
+);
+const HomePage = lazy(() =>
+  import("@/routes/home").then((module) => ({ default: module.HomePage })),
+);
+const OrganizationMembersPage = lazy(() =>
+  import("@/routes/organization-members").then((module) => ({
+    default: module.OrganizationMembersPage,
+  })),
+);
+const OrganizationSettingsPage = lazy(() =>
+  import("@/routes/organization-settings").then((module) => ({
+    default: module.OrganizationSettingsPage,
+  })),
+);
+const PendingInvitesPage = lazy(() =>
+  import("@/routes/pending-invites").then((module) => ({
+    default: module.PendingInvitesPage,
+  })),
+);
+const ResetPasswordPage = lazy(() =>
+  import("@/routes/reset-password").then((module) => ({
+    default: module.ResetPasswordPage,
+  })),
+);
+const SettingsPage = lazy(() =>
+  import("@/routes/settings").then((module) => ({
+    default: module.SettingsPage,
+  })),
+);
+const SignInPage = lazy(() =>
+  import("@/routes/sign-in").then((module) => ({
+    default: module.SignInPage,
+  })),
+);
+const SignUpPage = lazy(() =>
+  import("@/routes/sign-up").then((module) => ({
+    default: module.SignUpPage,
+  })),
+);
+const VerifyEmailPage = lazy(() =>
+  import("@/routes/verify-email").then((module) => ({
+    default: module.VerifyEmailPage,
+  })),
+);
 
 type AuthSearch = {
   redirect?: string;
@@ -106,7 +188,20 @@ const acceptInviteSearchSchema = (
 });
 
 const rootRoute = createRootRoute({
-  component: () => <Outlet />,
+  component: () => (
+    <Suspense
+      fallback={
+        <div
+          className="flex min-h-screen items-center justify-center text-sm text-muted-foreground"
+          role="status"
+        >
+          Loading page…
+        </div>
+      }
+    >
+      <Outlet />
+    </Suspense>
+  ),
   notFoundComponent: () => (
     <div className="flex min-h-screen items-center justify-center p-6 text-center text-sm text-muted-foreground">
       Page not found.
